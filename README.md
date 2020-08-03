@@ -1,2 +1,2 @@
 # karas-dragonbones
-Dragonbones plugin
+Dragonbones component for karas.

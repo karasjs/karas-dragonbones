@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sources":["src/index.js"],"sourcesContent":["import karas from 'karas';\n\nclass Dragonbones extends karas.Component {}\n\nexport default Dragonbones;\n"],"names":["Dragonbones","karas","Component"],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;MAEMA;;;;;;;;;;;;IAAoBC,KAAK,CAACC;;;;;;;;"}
