@@ -22,7 +22,7 @@ function canvasBone(ctx, sx, sy, matrixEvent, bone) {
 function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
   let opacity = ctx.globalAlpha;
   slot.forEach(item => {
-    let { name, parent, displayIndex = 0, color: { aM = 100 } = {} } = item;
+    let { name, displayIndex = 0, color: { aM = 100 } = {} } = item;
     // 插槽隐藏不显示
     if(displayIndex < 0) {
       return;
@@ -39,6 +39,10 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
       let { triangleList } = displayTarget;
       triangleList.forEach(item => {
         let { matrix, scaleCoords } = item;
+        // 可能缩放至0或变形为一条线无宽度不可见
+        if(matrix[0] === 0 || matrix[3] === 0) {
+          return;
+        }
         matrix = math.matrix.multiply(matrixEvent, matrix);
         // clip绘制
         ctx.save();
@@ -56,6 +60,9 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
     // 默认图片类型
     else {
       let { matrix } = displayTarget;
+      if(matrix[0] === 0 || matrix[3] === 0) {
+        return;
+      }
       matrix = math.matrix.multiply(matrixEvent, matrix);
       // clip绘制
       ctx.save();
@@ -79,7 +86,7 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
 
 function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
   slot.forEach(item => {
-    let { name, parent, displayIndex = 0 } = item;
+    let { name, displayIndex = 0 } = item;
     // 插槽隐藏不显示
     if(displayIndex < 0) {
       return;

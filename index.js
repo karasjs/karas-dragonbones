@@ -964,7 +964,6 @@
     var opacity = ctx.globalAlpha;
     slot.forEach(function (item) {
       var name = item.name,
-          parent = item.parent,
           _item$displayIndex = item.displayIndex,
           displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
           _item$color = item.color;
@@ -989,7 +988,12 @@
         var triangleList = displayTarget.triangleList;
         triangleList.forEach(function (item) {
           var matrix = item.matrix,
-              scaleCoords = item.scaleCoords;
+              scaleCoords = item.scaleCoords; // 可能缩放至0或变形为一条线无宽度不可见
+
+          if (matrix[0] === 0 || matrix[3] === 0) {
+            return;
+          }
+
           matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
 
           ctx.save();
@@ -1006,6 +1010,11 @@
       } // 默认图片类型
       else {
           var matrix = displayTarget.matrix;
+
+          if (matrix[0] === 0 || matrix[3] === 0) {
+            return;
+          }
+
           matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
 
           ctx.save();
@@ -1031,7 +1040,6 @@
   function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
     slot.forEach(function (item) {
       var name = item.name,
-          parent = item.parent,
           _item$displayIndex2 = item.displayIndex,
           displayIndex = _item$displayIndex2 === void 0 ? 0 : _item$displayIndex2; // 插槽隐藏不显示
 
