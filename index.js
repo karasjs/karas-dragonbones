@@ -246,7 +246,7 @@
     var boneHash = parseBone(bone);
     var slotHash = parseSlot(slot);
     var skinHash = parseSkin(skin, texHash);
-    var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
+    var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash);
     return {
       bone: bone,
       boneHash: boneHash,
@@ -264,6 +264,22 @@
     var hash = {};
     data.forEach(function (item) {
       hash[item.name] = item;
+
+      if (!item.color) {
+        item.color = {
+          aM: 100
+        };
+      } else {
+        if (item.color.aM === undefined) {
+          item.color.aM = 100;
+        }
+      } // if(!color) {
+      //   item.opacity = 1;
+      // }
+      // else {
+      //   item.opacitiy = color.aM === undefined ? 1 : (color.aM / 100);
+      // }
+
     });
     return hash;
   }
@@ -544,7 +560,7 @@
     return (d + px) / d;
   }
 
-  function parseAnimation(data, frameRate, boneHash) {
+  function parseAnimation(data, frameRate, boneHash, slotHash) {
     var hash = {};
     data.forEach(function (item) {
       var duration = item.duration,
@@ -560,7 +576,8 @@
         iterations: playTimes === 0 ? Infinity : playTimes,
         fps: frameRate,
         fill: 'forwards'
-      };
+      }; // 骨骼动画列表
+
       item.boneAnimationList = bone.map(function (item) {
         var name = item.name,
             translateFrame = item.translateFrame,
@@ -690,16 +707,51 @@
         }
 
         return res;
-      });
+      }); // 插槽动画列表
+
       item.slotAnimationList = slot.map(function (item) {
-        var offsetSum = 0;
-        item.displayFrame.forEach(function (frame) {
-          var _frame$duration4 = frame.duration,
-              d = _frame$duration4 === void 0 ? 1 : _frame$duration4;
-          var offset = offsetSum / duration;
-          offsetSum += d;
-          frame.offset = offset;
-        });
+        var name = item.name,
+            displayFrame = item.displayFrame,
+            colorFrame = item.colorFrame;
+
+        if (displayFrame) {
+          var offsetSum = 0;
+          displayFrame.forEach(function (frame) {
+            var _frame$duration4 = frame.duration,
+                d = _frame$duration4 === void 0 ? 1 : _frame$duration4;
+            var offset = offsetSum / duration;
+            offsetSum += d;
+            frame.offset = offset;
+          });
+        }
+
+        if (colorFrame) {
+          var _offsetSum3 = 0;
+          var last;
+          colorFrame.forEach(function (frame) {
+            var _frame$duration5 = frame.duration,
+                d = _frame$duration5 === void 0 ? 1 : _frame$duration5;
+            var offset = _offsetSum3 / duration;
+            _offsetSum3 += d;
+            frame.offset = offset; // 没有value就用原生value
+
+            if (!frame.value) {
+              var _slot = slotHash[name];
+              frame.value = _slot.color;
+            }
+
+            if (frame.value.aM === undefined) {
+              frame.value.aM = 100;
+            }
+
+            if (last) {
+              last.da = frame.value.aM - last.value.aM;
+            }
+
+            last = frame;
+          });
+        }
+
         return item;
       });
     });
@@ -861,11 +913,35 @@
   function animateSlot(animationList, offset, slotHash) {
     animationList.forEach(function (item) {
       var name = item.name,
-          displayFrame = item.displayFrame;
-      var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
-      var _displayFrame$i$value = displayFrame[i].value,
-          value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
-      slotHash[name].displayIndex = value;
+          displayFrame = item.displayFrame,
+          colorFrame = item.colorFrame;
+      var slot = slotHash[name];
+
+      if (displayFrame) {
+        var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+        var _displayFrame$i$value = displayFrame[i].value,
+            value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
+        slot.displayIndex = value;
+      }
+
+      if (colorFrame) {
+        var len = colorFrame.length;
+
+        var _i = binarySearch(0, len - 1, offset, colorFrame);
+
+        var current = colorFrame[_i]; // 是否最后一帧
+
+        if (_i === len - 1) {
+          slot.color = current.value;
+        } else {
+          var next = colorFrame[_i + 1];
+          var total = next.offset - current.offset;
+          var percent = (offset - current.offset) / total;
+          slot.color = {
+            aM: current.value.aM + current.da * percent
+          };
+        }
+      }
     });
   }
   /**
@@ -1002,7 +1078,7 @@
     ctx.lineWidth = 1;
     ctx.arc(sx, sy, 5, 0, Math.PI * 2);
     ctx.moveTo(sx, sy);
-    ctx.lineTo(sx + length || 5, sy);
+    ctx.lineTo(length || 5, sy);
     ctx.closePath();
     ctx.stroke();
     children.forEach(function (item) {
@@ -1010,16 +1086,14 @@
     });
   }
 
-  function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
+  function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
     var opacity = ctx.globalAlpha;
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex = item.displayIndex,
           displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
           blendMode = item.blendMode,
-          _item$color = item.color;
-      _item$color = _item$color === void 0 ? {} : _item$color;
-      var _item$color$aM = _item$color.aM,
+          _item$color$aM = item.color.aM,
           aM = _item$color$aM === void 0 ? 100 : _item$color$aM; // 插槽隐藏不显示
 
       if (displayIndex < 0) {
@@ -1032,10 +1106,7 @@
       } // 透明度
 
 
-      if (aM < 100) {
-        ctx.globalAlpha *= aM / 100;
-      }
-
+      ctx.globalAlpha *= aM / 100;
       var skin = skinHash[name];
       var displayTarget = skin.display[displayIndex];
       var tex = texHash[displayTarget.name]; // 网格类型
@@ -1056,11 +1127,11 @@
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.beginPath();
           ctx.closePath();
-          ctx.moveTo(sx + scaleCoords[0][0], sy + scaleCoords[0][1]);
-          ctx.lineTo(sx + scaleCoords[1][0], sy + scaleCoords[1][1]);
-          ctx.lineTo(sx + scaleCoords[2][0], sy + scaleCoords[2][1]);
+          ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
+          ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
+          ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
           ctx.clip();
-          ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
+          ctx.drawImage(tex.source, -tex.x, -tex.y);
           ctx.restore();
         });
       } // 默认图片类型
@@ -1076,29 +1147,26 @@
           ctx.save();
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.beginPath();
-          ctx.moveTo(sx, sy);
-          ctx.lineTo(sx + tex.frameWidth, sy);
-          ctx.lineTo(sx + tex.frameWidth, sy + tex.frameHeight);
-          ctx.lineTo(sx, sy + tex.frameHeight);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(tex.frameWidth, 0);
+          ctx.lineTo(tex.frameWidth, tex.frameHeight);
+          ctx.lineTo(0, tex.frameHeight);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
+          ctx.drawImage(tex.source, -tex.x, -tex.y);
           ctx.restore();
         } // 恢复模式
 
 
       if (blendMode) {
         ctx.globalCompositeOperation = 'source-over';
-      } // 恢复透明度
-
-
-      if (aM < 100) {
-        ctx.globalAlpha = opacity;
       }
-    });
+    }); // 恢复透明度
+
+    ctx.globalAlpha = opacity;
   }
 
-  function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
+  function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex2 = item.displayIndex,
@@ -1122,9 +1190,9 @@
           ctx.strokeStyle = '#39F';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(sx + scaleCoords[0][0], sy + scaleCoords[0][1]);
-          ctx.lineTo(sx + scaleCoords[1][0], sy + scaleCoords[1][1]);
-          ctx.lineTo(sx + scaleCoords[2][0], sy + scaleCoords[2][1]);
+          ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
+          ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
+          ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
           ctx.closePath();
           ctx.stroke();
         });
@@ -1149,9 +1217,9 @@
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(sx, sy);
-          ctx.lineTo(sx + tex.frameWidth, sy);
-          ctx.lineTo(sx + tex.frameWidth, sy + tex.frameHeight);
-          ctx.lineTo(sx, sy + tex.frameHeight);
+          ctx.lineTo(tex.frameWidth, sy);
+          ctx.lineTo(tex.frameWidth, tex.frameHeight);
+          ctx.lineTo(sx, tex.frameHeight);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -1179,6 +1247,8 @@
     _createClass(Dragonbones, [{
       key: "componentDidMount",
       value: function componentDidMount() {
+        var _this = this;
+
         var self = this; // 劫持本隐藏节点的render()，在每次渲染时绘制骨骼动画
 
         var shadowRoot = this.shadowRoot;
@@ -1211,7 +1281,7 @@
               } // 隐藏节点模拟一段不展示的动画，带动每次渲染
 
 
-              var a = fake.animate([{
+              var a = _this.animation = fake.animate([{
                 opacity: 0
               }, {
                 opacity: 1
@@ -1225,20 +1295,25 @@
                 util.calSlot(slot, skinHash, bone, boneHash, texHash);
 
                 if (renderMode === karas.mode.CANVAS) {
-                  var sx = shadowRoot.sx,
-                      sy = shadowRoot.sy,
-                      matrixEvent = shadowRoot.matrixEvent;
-                  render.canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
+                  var matrixEvent = shadowRoot.matrixEvent,
+                      computedStyle = shadowRoot.computedStyle; // 先在dom中居中
+
+                  var left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
+                  var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
+                  var t = karas.math.matrix.identity();
+                  t[4] = left;
+                  t[5] = top;
+                  matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
+                  render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash); // debug模式
 
                   if (self.props.debug) {
-                    render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
-                    render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                    render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+                    render.canvasBone(ctx, matrixEvent, bone[0]);
                   } else {
                     if (self.props.debugBone) {
-                      render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                      render.canvasBone(ctx, matrixEvent, bone[0]);
                     }
-                  } // a.pause();
-
+                  }
                 }
               };
             }

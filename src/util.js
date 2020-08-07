@@ -134,10 +134,30 @@ function mergeChildBoneMatrix(bone, parentMatrix) {
  */
 function animateSlot(animationList, offset, slotHash) {
   animationList.forEach(item => {
-    let { name, displayFrame } = item;
-    let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
-    let { value = 0 } = displayFrame[i];
-    slotHash[name].displayIndex = value;
+    let { name, displayFrame, colorFrame } = item;
+    let slot = slotHash[name];
+    if(displayFrame) {
+      let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+      let { value = 0 } = displayFrame[i];
+      slot.displayIndex = value;
+    }
+    if(colorFrame) {
+      let len = colorFrame.length;
+      let i = binarySearch(0, len - 1, offset, colorFrame);
+      let current = colorFrame[i];
+      // 是否最后一帧
+      if(i === len - 1) {
+        slot.color = current.value;
+      }
+      else {
+        let next = colorFrame[i + 1];
+        let total = next.offset - current.offset;
+        let percent = (offset - current.offset) / total;
+        slot.color = {
+          aM: current.value.aM + current.da * percent,
+        };
+      }
+    }
   });
 }
 

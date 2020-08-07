@@ -5,19 +5,17 @@ Dragonbones component for karas.
 ```jsx
 import Dragonbones from 'karas-dragonbones';
 
-karas.render(
+let root = karas.render(
   <canvas>
     <Dragonbones
-      ske={ske}
-      tex={tex}
-      playbackRate={1}
-      debug={false}
+      ref="db"
+      ske={ske} // 骨骼描述json
+      tex={tex} // 骨骼纹理json
+      playbackRate={1} // 播放速度
+      debug={false} //展示调试绘制
     />
   </canvas>,
   '#dom'
 );
+root.db.animation; // 动画WAA对象，karas.animate.Animation实例，可控制动画状态
 ```
-* ske: 骨骼描述json
-* tex: 骨骼纹理json
-* playbackRate: 播放速度
-* debug: 展示调试绘制

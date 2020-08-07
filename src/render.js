@@ -11,7 +11,7 @@ function canvasBone(ctx, sx, sy, matrixEvent, bone) {
   ctx.lineWidth = 1;
   ctx.arc(sx, sy, 5, 0, Math.PI * 2);
   ctx.moveTo(sx, sy);
-  ctx.lineTo(sx + length || 5, sy);
+  ctx.lineTo(length || 5, sy);
   ctx.closePath();
   ctx.stroke();
   children.forEach(item => {
@@ -19,10 +19,10 @@ function canvasBone(ctx, sx, sy, matrixEvent, bone) {
   });
 }
 
-function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
+function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
   let opacity = ctx.globalAlpha;
   slot.forEach(item => {
-    let { name, displayIndex = 0, blendMode, color: { aM = 100 } = {} } = item;
+    let { name, displayIndex = 0, blendMode, color: { aM = 100 } } = item;
     // 插槽隐藏不显示
     if(displayIndex < 0) {
       return;
@@ -32,9 +32,7 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
       ctx.globalCompositeOperation = 'lighter';
     }
     // 透明度
-    if(aM < 100) {
-      ctx.globalAlpha *= aM / 100;
-    }
+    ctx.globalAlpha *= aM / 100;
     let skin = skinHash[name];
     let displayTarget = skin.display[displayIndex];
     let tex = texHash[displayTarget.name];
@@ -53,11 +51,11 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
         ctx.setTransform(...matrix);
         ctx.beginPath();
         ctx.closePath();
-        ctx.moveTo(sx + scaleCoords[0][0], sy + scaleCoords[0][1]);
-        ctx.lineTo(sx + scaleCoords[1][0], sy + scaleCoords[1][1]);
-        ctx.lineTo(sx + scaleCoords[2][0], sy + scaleCoords[2][1]);
+        ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
+        ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
+        ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
         ctx.clip();
-        ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
+        ctx.drawImage(tex.source, -tex.x, -tex.y);
         ctx.restore();
       });
     }
@@ -72,27 +70,25 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
       ctx.save();
       ctx.setTransform(...matrix);
       ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(sx + tex.frameWidth, sy);
-      ctx.lineTo(sx + tex.frameWidth, sy + tex.frameHeight);
-      ctx.lineTo(sx, sy + tex.frameHeight);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(tex.frameWidth, 0);
+      ctx.lineTo(tex.frameWidth, tex.frameHeight);
+      ctx.lineTo(0, tex.frameHeight);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
+      ctx.drawImage(tex.source, -tex.x, -tex.y);
       ctx.restore();
     }
     // 恢复模式
     if(blendMode) {
       ctx.globalCompositeOperation = 'source-over';
     }
-    // 恢复透明度
-    if(aM < 100) {
-      ctx.globalAlpha = opacity;
-    }
   });
+  // 恢复透明度
+  ctx.globalAlpha = opacity;
 }
 
-function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
+function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
   slot.forEach(item => {
     let { name, displayIndex = 0 } = item;
     // 插槽隐藏不显示
@@ -111,9 +107,9 @@ function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
         ctx.strokeStyle = '#39F';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(sx + scaleCoords[0][0], sy + scaleCoords[0][1]);
-        ctx.lineTo(sx + scaleCoords[1][0], sy + scaleCoords[1][1]);
-        ctx.lineTo(sx + scaleCoords[2][0], sy + scaleCoords[2][1]);
+        ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
+        ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
+        ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
         ctx.closePath();
         ctx.stroke();
       });
@@ -139,9 +135,9 @@ function canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(sx, sy);
-      ctx.lineTo(sx + tex.frameWidth, sy);
-      ctx.lineTo(sx + tex.frameWidth, sy + tex.frameHeight);
-      ctx.lineTo(sx, sy + tex.frameHeight)
+      ctx.lineTo(tex.frameWidth, sy);
+      ctx.lineTo(tex.frameWidth, tex.frameHeight);
+      ctx.lineTo(sx, tex.frameHeight)
       ctx.closePath();
       ctx.stroke();
       ctx.restore();

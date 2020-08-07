@@ -54,7 +54,7 @@ function parseSke(ske, texHash) {
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
   let skinHash = parseSkin(skin, texHash);
-  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
+  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash);
   return {
     bone,
     boneHash,
@@ -72,6 +72,22 @@ function parseSlot(data) {
   let hash = {};
   data.forEach(item => {
     hash[item.name] = item;
+    if(!item.color) {
+      item.color = {
+        aM: 100,
+      };
+    }
+    else {
+      if(item.color.aM === undefined) {
+        item.color.aM = 100;
+      }
+    }
+    // if(!color) {
+    //   item.opacity = 1;
+    // }
+    // else {
+    //   item.opacitiy = color.aM === undefined ? 1 : (color.aM / 100);
+    // }
   });
   return hash;
 }
@@ -327,7 +343,7 @@ function triangleOriginCoords(x1, y1, x2, y2, x3, y3) {
   return [xMin, yMin, xMax - xMin, yMax - yMin];
 }
 
-function parseAnimation(data, frameRate, boneHash) {
+function parseAnimation(data, frameRate, boneHash, slotHash) {
   let hash = {};
   data.forEach(item => {
     let { duration, playTimes, name, bone = [], slot = [] } = item;
@@ -338,6 +354,7 @@ function parseAnimation(data, frameRate, boneHash) {
       fps: frameRate,
       fill: 'forwards',
     };
+    // 骨骼动画列表
     item.boneAnimationList = bone.map(item => {
       let { name, translateFrame, rotateFrame, scaleFrame } = item;
       let { transform: originTransform = {} } = boneHash[name];
@@ -423,14 +440,40 @@ function parseAnimation(data, frameRate, boneHash) {
       }
       return res;
     });
+    // 插槽动画列表
     item.slotAnimationList = slot.map(item => {
-      let offsetSum = 0;
-      item.displayFrame.forEach(frame => {
-        let { duration: d = 1 } = frame;
-        let offset = offsetSum / duration;
-        offsetSum += d;
-        frame.offset = offset;
-      });
+      let { name, displayFrame, colorFrame } = item;
+      if(displayFrame) {
+        let offsetSum = 0;
+        displayFrame.forEach(frame => {
+          let { duration: d = 1 } = frame;
+          let offset = offsetSum / duration;
+          offsetSum += d;
+          frame.offset = offset;
+        });
+      }
+      if(colorFrame) {
+        let offsetSum = 0;
+        let last;
+        colorFrame.forEach(frame => {
+          let { duration: d = 1 } = frame;
+          let offset = offsetSum / duration;
+          offsetSum += d;
+          frame.offset = offset;
+          // 没有value就用原生value
+          if(!frame.value) {
+            let slot = slotHash[name];
+            frame.value = slot.color;
+          }
+          if(frame.value.aM === undefined) {
+            frame.value.aM = 100;
+          }
+          if(last) {
+            last.da = frame.value.aM - last.value.aM;
+          }
+          last = frame;
+        });
+      }
       return item;
     });
   });

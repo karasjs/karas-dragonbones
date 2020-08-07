@@ -32,7 +32,7 @@ class Dragonbones extends karas.Component {
           }
 
           // 隐藏节点模拟一段不展示的动画，带动每次渲染
-          let a = fake.animate([
+          let a = this.animation = fake.animate([
             {
               opacity: 0,
             },
@@ -49,18 +49,25 @@ class Dragonbones extends karas.Component {
             util.animateSlot(slotAnimationList, offset, slotHash);
             util.calSlot(slot, skinHash, bone, boneHash, texHash);
             if(renderMode === karas.mode.CANVAS) {
-              let { sx, sy, matrixEvent } = shadowRoot;
-              render.canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
+              let { matrixEvent, computedStyle } = shadowRoot;
+              // 先在dom中居中
+              let left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
+              let top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
+              let t = karas.math.matrix.identity();
+              t[4] = left;
+              t[5] = top;
+              matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
+              render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash);
+              // debug模式
               if(self.props.debug) {
-                render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
-                render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+                render.canvasBone(ctx, matrixEvent, bone[0]);
               }
               else {
                 if(self.props.debugBone) {
-                  render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                  render.canvasBone(ctx, matrixEvent, bone[0]);
                 }
               }
-              // a.pause();
             }
           };
         }
