@@ -54,7 +54,7 @@ function parseSke(ske, texHash) {
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
   let skinHash = parseSkin(skin, texHash);
-  let animationHash = parseAnimation(animation, frameRate || globalFrameRate, boneHash);
+  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
   return {
     bone,
     boneHash,
@@ -330,15 +330,15 @@ function triangleOriginCoords(x1, y1, x2, y2, x3, y3) {
 function parseAnimation(data, frameRate, boneHash) {
   let hash = {};
   data.forEach(item => {
-    let { duration, playTimes, name, bone = [] } = item;
+    let { duration, playTimes, name, bone = [], slot = [] } = item;
     hash[name] = item;
     item.options = {
       duration: 1000 * duration / frameRate,
       iterations: playTimes === 0 ? Infinity : playTimes,
-      fps: frameRate || 60,
+      fps: frameRate,
       fill: 'forwards',
     };
-    item.animationList = bone.map(item => {
+    item.boneAnimationList = bone.map(item => {
       let { name, translateFrame, rotateFrame, scaleFrame } = item;
       let { transform: originTransform = {} } = boneHash[name];
       let res = {
@@ -349,9 +349,10 @@ function parseAnimation(data, frameRate, boneHash) {
         let offsetSum = 0;
         let last;
         let value = translateFrame.map(frame => {
+          let { duration: d = 1 } = frame;
           let [easing, easingFn] = getEasing(frame);
           let offset = offsetSum / duration;
-          offsetSum += frame.duration || 0;
+          offsetSum += d;
           let { x = 0, y = 0 } = originTransform;
           let res = {
             type: 0,
@@ -374,9 +375,10 @@ function parseAnimation(data, frameRate, boneHash) {
         let offsetSum = 0;
         let last;
         let value = rotateFrame.map(frame => {
+          let { duration: d = 1 } = frame;
           let [easing, easingFn] = getEasing(frame);
           let offset = offsetSum / duration;
-          offsetSum += frame.duration || 0;
+          offsetSum += d;
           let { skX = 0 } = originTransform;
           let res = {
             type: 1,
@@ -397,9 +399,10 @@ function parseAnimation(data, frameRate, boneHash) {
         let offsetSum = 0;
         let last;
         let value = scaleFrame.map(frame => {
+          let { duration: d = 1 } = frame;
           let [easing, easingFn] = getEasing(frame);
           let offset = offsetSum / duration;
-          offsetSum += frame.duration || 0;
+          offsetSum += d;
           let { scX = 1, scY = 1 } = originTransform;
           let res = {
             type: 2,
@@ -419,6 +422,16 @@ function parseAnimation(data, frameRate, boneHash) {
         res.list.push(value);
       }
       return res;
+    });
+    item.slotAnimationList = slot.map(item => {
+      let offsetSum = 0;
+      item.displayFrame.forEach(frame => {
+        let { duration: d = 1 } = frame;
+        let offset = offsetSum / duration;
+        offsetSum += d;
+        frame.offset = offset;
+      });
+      return item;
     });
   });
   return hash;

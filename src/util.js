@@ -126,6 +126,29 @@ function mergeChildBoneMatrix(bone, parentMatrix) {
   });
 }
 
+/**
+ * 根据当前动画时间执行slot的动画
+ * @param animationList
+ * @param offset
+ * @param slotHash
+ */
+function animateSlot(animationList, offset, slotHash) {
+  animationList.forEach(item => {
+    let { name, displayFrame } = item;
+    let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+    let { value = 0 } = displayFrame[i];
+    slotHash[name].displayIndex = value;
+  });
+}
+
+/**
+ * 根据当前骨骼状态计算slot中显示对象变换matrix
+ * @param slot
+ * @param skinHash
+ * @param bone
+ * @param boneHash
+ * @param texHash
+ */
 function calSlot(slot, skinHash, bone, boneHash, texHash) {
   slot.forEach(item => {
     let { name, parent, displayIndex = 0 } = item;
@@ -218,5 +241,6 @@ function calSlot(slot, skinHash, bone, boneHash, texHash) {
 export default {
   animateBoneMatrix,
   mergeBoneMatrix,
+  animateSlot,
   calSlot,
 };

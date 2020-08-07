@@ -26,7 +26,7 @@ class Dragonbones extends karas.Component {
 
         if(defaultActions && defaultActions.length) {
           let animation = animationHash[defaultActions[0].gotoAndPlay];
-          let { animationList, options } = animation;
+          let { boneAnimationList, slotAnimationList, options } = animation;
           if(!karas.util.isNil(self.props.playbackRate)) {
             options.playbackRate = self.props.playbackRate;
           }
@@ -44,8 +44,9 @@ class Dragonbones extends karas.Component {
           // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
           fake.render = function(renderMode, ctx, defs) {
             let offset = Math.min(1, a.currentTime / a.duration);
-            util.animateBoneMatrix(animationList, offset, boneHash);
+            util.animateBoneMatrix(boneAnimationList, offset, boneHash);
             util.mergeBoneMatrix(bone[0]);
+            util.animateSlot(slotAnimationList, offset, slotHash);
             util.calSlot(slot, skinHash, bone, boneHash, texHash);
             if(renderMode === karas.mode.CANVAS) {
               let { sx, sy, matrixEvent } = shadowRoot;
@@ -54,6 +55,12 @@ class Dragonbones extends karas.Component {
                 render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
                 render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
               }
+              else {
+                if(self.props.debugBone) {
+                  render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                }
+              }
+              // a.pause();
             }
           };
         }

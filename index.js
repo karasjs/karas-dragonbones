@@ -246,7 +246,7 @@
     var boneHash = parseBone(bone);
     var slotHash = parseSlot(slot);
     var skinHash = parseSkin(skin, texHash);
-    var animationHash = parseAnimation(animation, frameRate || globalFrameRate, boneHash);
+    var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
     return {
       bone: bone,
       boneHash: boneHash,
@@ -551,15 +551,17 @@
           playTimes = item.playTimes,
           name = item.name,
           _item$bone = item.bone,
-          bone = _item$bone === void 0 ? [] : _item$bone;
+          bone = _item$bone === void 0 ? [] : _item$bone,
+          _item$slot = item.slot,
+          slot = _item$slot === void 0 ? [] : _item$slot;
       hash[name] = item;
       item.options = {
         duration: 1000 * duration / frameRate,
         iterations: playTimes === 0 ? Infinity : playTimes,
-        fps: frameRate || 60,
+        fps: frameRate,
         fill: 'forwards'
       };
-      item.animationList = bone.map(function (item) {
+      item.boneAnimationList = bone.map(function (item) {
         var name = item.name,
             translateFrame = item.translateFrame,
             rotateFrame = item.rotateFrame,
@@ -575,13 +577,16 @@
           var offsetSum = 0;
           var last;
           var value = translateFrame.map(function (frame) {
+            var _frame$duration = frame.duration,
+                d = _frame$duration === void 0 ? 1 : _frame$duration;
+
             var _getEasing = getEasing(frame),
                 _getEasing2 = _slicedToArray(_getEasing, 2),
                 easing = _getEasing2[0],
                 easingFn = _getEasing2[1];
 
             var offset = offsetSum / duration;
-            offsetSum += frame.duration || 0;
+            offsetSum += d;
             var _originTransform$x = originTransform.x,
                 x = _originTransform$x === void 0 ? 0 : _originTransform$x,
                 _originTransform$y = originTransform.y,
@@ -612,13 +617,16 @@
           var _last;
 
           var _value = rotateFrame.map(function (frame) {
+            var _frame$duration2 = frame.duration,
+                d = _frame$duration2 === void 0 ? 1 : _frame$duration2;
+
             var _getEasing3 = getEasing(frame),
                 _getEasing4 = _slicedToArray(_getEasing3, 2),
                 easing = _getEasing4[0],
                 easingFn = _getEasing4[1];
 
             var offset = _offsetSum / duration;
-            _offsetSum += frame.duration || 0;
+            _offsetSum += d;
             var _originTransform$skX = originTransform.skX,
                 skX = _originTransform$skX === void 0 ? 0 : _originTransform$skX;
             var res = {
@@ -646,13 +654,16 @@
           var _last2;
 
           var _value2 = scaleFrame.map(function (frame) {
+            var _frame$duration3 = frame.duration,
+                d = _frame$duration3 === void 0 ? 1 : _frame$duration3;
+
             var _getEasing5 = getEasing(frame),
                 _getEasing6 = _slicedToArray(_getEasing5, 2),
                 easing = _getEasing6[0],
                 easingFn = _getEasing6[1];
 
             var offset = _offsetSum2 / duration;
-            _offsetSum2 += frame.duration || 0;
+            _offsetSum2 += d;
             var _originTransform$scX = originTransform.scX,
                 scX = _originTransform$scX === void 0 ? 1 : _originTransform$scX,
                 _originTransform$scY = originTransform.scY,
@@ -679,6 +690,17 @@
         }
 
         return res;
+      });
+      item.slotAnimationList = slot.map(function (item) {
+        var offsetSum = 0;
+        item.displayFrame.forEach(function (frame) {
+          var _frame$duration4 = frame.duration,
+              d = _frame$duration4 === void 0 ? 1 : _frame$duration4;
+          var offset = offsetSum / duration;
+          offsetSum += d;
+          frame.offset = offset;
+        });
+        return item;
       });
     });
     return hash;
@@ -828,6 +850,33 @@
       mergeChildBoneMatrix(item, bone.currentMatrix);
     });
   }
+  /**
+   * 根据当前动画时间执行slot的动画
+   * @param animationList
+   * @param offset
+   * @param slotHash
+   */
+
+
+  function animateSlot(animationList, offset, slotHash) {
+    animationList.forEach(function (item) {
+      var name = item.name,
+          displayFrame = item.displayFrame;
+      var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+      var _displayFrame$i$value = displayFrame[i].value,
+          value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
+      slotHash[name].displayIndex = value;
+    });
+  }
+  /**
+   * 根据当前骨骼状态计算slot中显示对象变换matrix
+   * @param slot
+   * @param skinHash
+   * @param bone
+   * @param boneHash
+   * @param texHash
+   */
+
 
   function calSlot(slot, skinHash, bone, boneHash, texHash) {
     slot.forEach(function (item) {
@@ -936,6 +985,7 @@
   var util = {
     animateBoneMatrix: animateBoneMatrix,
     mergeBoneMatrix: mergeBoneMatrix,
+    animateSlot: animateSlot,
     calSlot: calSlot
   };
 
@@ -1152,7 +1202,8 @@
 
             if (defaultActions && defaultActions.length) {
               var animation = animationHash[defaultActions[0].gotoAndPlay];
-              var animationList = animation.animationList,
+              var boneAnimationList = animation.boneAnimationList,
+                  slotAnimationList = animation.slotAnimationList,
                   options = animation.options;
 
               if (!karas.util.isNil(self.props.playbackRate)) {
@@ -1168,8 +1219,9 @@
 
               fake.render = function (renderMode, ctx, defs) {
                 var offset = Math.min(1, a.currentTime / a.duration);
-                util.animateBoneMatrix(animationList, offset, boneHash);
+                util.animateBoneMatrix(boneAnimationList, offset, boneHash);
                 util.mergeBoneMatrix(bone[0]);
+                util.animateSlot(slotAnimationList, offset, slotHash);
                 util.calSlot(slot, skinHash, bone, boneHash, texHash);
 
                 if (renderMode === karas.mode.CANVAS) {
@@ -1181,7 +1233,12 @@
                   if (self.props.debug) {
                     render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
                     render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
-                  }
+                  } else {
+                    if (self.props.debugBone) {
+                      render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                    }
+                  } // a.pause();
+
                 }
               };
             }
