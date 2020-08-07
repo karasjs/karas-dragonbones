@@ -154,125 +154,125 @@ function parseSkin(data, texHash) {
               pose: matrix,
             };
           }
-          // 顶点格式化，相对于骨骼点的x/y位移差值
-          let verticesList = item.verticesList = [];
-          for(let i = 0, len = vertices.length; i < len; i += 2) {
-            let index = i >> 1;
-            let x = vertices[i];
-            let y = vertices[i + 1];
-            let res = {
-              index,
-              x,
-              y,
-            };
-            verticesList.push(res);
-            // 有添加绑定骨骼才有权重
-            if(weightHash) {
-              res.weightList = [];
-              let weight = weightHash[index];
-              weight.forEach(item => {
-                let { index, value } = item;
-                let { coords, pose } = bonePoseHash[index];
-                // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
-                let [x0, y0] = math.matrix.calPoint([0, 0], pose);
-                let [x1, y1] = math.matrix.calPoint([1, 0], pose);
-                let dx = x1 - x0;
-                let dy = y1 - y0;
-                let theta;
-                // 4个象限分开判断
-                if(dx >= 0 && dy >= 0) {
-                  theta = -Math.atan(Math.abs(dy / dx));
-                }
-                else if(dx < 0 && dy >= 0) {
-                  theta = -Math.PI + Math.atan(Math.abs(dy / dx));
-                }
-                else if(dx < 0 && dy < 0) {
-                  theta = Math.PI - Math.atan(Math.abs(dy / dx));
-                }
-                else {
-                  theta = Math.atan(Math.abs(dy / dx));
-                }
-                let rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
-                let translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
-                let matrix = math.matrix.multiply(rotate, translate);
-                res.weightList.push({
-                  index,
-                  value,
-                  matrix,
-                });
+        }
+        // 顶点格式化，相对于骨骼点的x/y位移差值
+        let verticesList = item.verticesList = [];
+        for(let i = 0, len = vertices.length; i < len; i += 2) {
+          let index = i >> 1;
+          let x = vertices[i];
+          let y = vertices[i + 1];
+          let res = {
+            index,
+            x,
+            y,
+          };
+          verticesList.push(res);
+          // 有添加绑定骨骼才有权重
+          if(weightHash) {
+            res.weightList = [];
+            let weight = weightHash[index];
+            weight.forEach(item => {
+              let { index, value } = item;
+              let { coords, pose } = bonePoseHash[index];
+              // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
+              let [x0, y0] = math.matrix.calPoint([0, 0], pose);
+              let [x1, y1] = math.matrix.calPoint([1, 0], pose);
+              let dx = x1 - x0;
+              let dy = y1 - y0;
+              let theta;
+              // 4个象限分开判断
+              if(dx >= 0 && dy >= 0) {
+                theta = -Math.atan(Math.abs(dy / dx));
+              }
+              else if(dx < 0 && dy >= 0) {
+                theta = -Math.PI + Math.atan(Math.abs(dy / dx));
+              }
+              else if(dx < 0 && dy < 0) {
+                theta = Math.PI - Math.atan(Math.abs(dy / dx));
+              }
+              else {
+                theta = Math.atan(Math.abs(dy / dx));
+              }
+              let rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
+              let translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
+              let matrix = math.matrix.multiply(rotate, translate);
+              res.weightList.push({
+                index,
+                value,
+                matrix,
               });
-            }
-          }
-          // 三角形，切割图片坐标
-          let tex = texHash[name];
-          let { width, height } = tex;
-          let triangleList = item.triangleList = [];
-          for(let i = 0, len = triangles.length; i < len; i += 3) {
-            let i1 = triangles[i];
-            let i2 = triangles[i + 1];
-            let i3 = triangles[i + 2];
-            // uv坐标
-            let p1x = uvs[i1 * 2];
-            let p1y = uvs[i1 * 2 + 1];
-            let p2x = uvs[i2 * 2];
-            let p2y = uvs[i2 * 2 + 1];
-            let p3x = uvs[i3 * 2];
-            let p3y = uvs[i3 * 2 + 1];
-            // uv贴图坐标根据尺寸映射真实坐标
-            let x1 = p1x * width;
-            let y1 = p1y * height;
-            let x2 = p2x * width;
-            let y2 = p2y * height;
-            let x3 = p3x * width;
-            let y3 = p3y * height;
-            // 从内心往外扩展约0.5px
-            let [x0, y0] = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3);
-            let scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25);
-            // 以内心为transformOrigin
-            let m = math.matrix.identity();
-            m[4] = -x0;
-            m[5] = -y0;
-            // 缩放
-            let t = math.matrix.identity();
-            t[0] = t[3] = scale;
-            m = math.matrix.multiply(t, m);
-            // 移动回去
-            t[4] = x0;
-            t[5] = y0;
-            m = math.matrix.multiply(t, m);
-            // 获取扩展后的三角形顶点坐标
-            let [sx1, sy1] = math.geom.transformPoint(m, x1, y1);
-            let [sx2, sy2] = math.geom.transformPoint(m, x2, y2);
-            let [sx3, sy3] = math.geom.transformPoint(m, x3, y3);
-            // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
-            // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
-            triangleList.push({
-              index: Math.round(i / 3),
-              indexList: [i1, i2, i3],
-              // ox,
-              // oy,
-              // ow,
-              // oh,
-              // points: [
-              //   [p1x, p1y],
-              //   [p2x, p2y],
-              //   [p3x, p3y]
-              // ],
-              coords: [
-                [x1, y1],
-                [x2, y2],
-                [x3, y3]
-              ],
-              scale,
-              scaleCoords: [
-                [sx1, sy1],
-                [sx2, sy2],
-                [sx3, sy3]
-              ],
-              width,
-              height,
             });
           }
+        }
+        // 三角形，切割图片坐标
+        let tex = texHash[name];
+        let { width, height } = tex;
+        let triangleList = item.triangleList = [];
+        for(let i = 0, len = triangles.length; i < len; i += 3) {
+          let i1 = triangles[i];
+          let i2 = triangles[i + 1];
+          let i3 = triangles[i + 2];
+          // uv坐标
+          let p1x = uvs[i1 * 2];
+          let p1y = uvs[i1 * 2 + 1];
+          let p2x = uvs[i2 * 2];
+          let p2y = uvs[i2 * 2 + 1];
+          let p3x = uvs[i3 * 2];
+          let p3y = uvs[i3 * 2 + 1];
+          // uv贴图坐标根据尺寸映射真实坐标
+          let x1 = p1x * width;
+          let y1 = p1y * height;
+          let x2 = p2x * width;
+          let y2 = p2y * height;
+          let x3 = p3x * width;
+          let y3 = p3y * height;
+          // 从内心往外扩展约0.5px
+          let [x0, y0] = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3);
+          let scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25);
+          // 以内心为transformOrigin
+          let m = math.matrix.identity();
+          m[4] = -x0;
+          m[5] = -y0;
+          // 缩放
+          let t = math.matrix.identity();
+          t[0] = t[3] = scale;
+          m = math.matrix.multiply(t, m);
+          // 移动回去
+          t[4] = x0;
+          t[5] = y0;
+          m = math.matrix.multiply(t, m);
+          // 获取扩展后的三角形顶点坐标
+          let [sx1, sy1] = math.geom.transformPoint(m, x1, y1);
+          let [sx2, sy2] = math.geom.transformPoint(m, x2, y2);
+          let [sx3, sy3] = math.geom.transformPoint(m, x3, y3);
+          // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
+          // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
+          triangleList.push({
+            index: Math.round(i / 3),
+            indexList: [i1, i2, i3],
+            // ox,
+            // oy,
+            // ow,
+            // oh,
+            // points: [
+            //   [p1x, p1y],
+            //   [p2x, p2y],
+            //   [p3x, p3y]
+            // ],
+            coords: [
+              [x1, y1],
+              [x2, y2],
+              [x3, y3]
+            ],
+            scale,
+            scaleCoords: [
+              [sx1, sy1],
+              [sx2, sy2],
+              [sx3, sy3]
+            ],
+            width,
+            height,
+          });
         }
       }
     });

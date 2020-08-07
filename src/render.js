@@ -22,10 +22,14 @@ function canvasBone(ctx, sx, sy, matrixEvent, bone) {
 function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
   let opacity = ctx.globalAlpha;
   slot.forEach(item => {
-    let { name, displayIndex = 0, color: { aM = 100 } = {} } = item;
+    let { name, displayIndex = 0, blendMode, color: { aM = 100 } = {} } = item;
     // 插槽隐藏不显示
     if(displayIndex < 0) {
       return;
+    }
+    // 叠加模式
+    if(blendMode === 'add') {
+      ctx.globalCompositeOperation = 'lighter';
     }
     // 透明度
     if(aM < 100) {
@@ -76,6 +80,10 @@ function canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash) {
       ctx.clip();
       ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
       ctx.restore();
+    }
+    // 恢复模式
+    if(blendMode) {
+      ctx.globalCompositeOperation = 'source-over';
     }
     // 恢复透明度
     if(aM < 100) {

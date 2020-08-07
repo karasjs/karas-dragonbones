@@ -366,152 +366,152 @@
                   coords: coords,
                   pose: matrix
                 };
-              } // 顶点格式化，相对于骨骼点的x/y位移差值
+              }
+            } // 顶点格式化，相对于骨骼点的x/y位移差值
 
 
-              var verticesList = item.verticesList = [];
+            var verticesList = item.verticesList = [];
 
-              var _loop = function _loop(_i2, _len2) {
-                var index = _i2 >> 1;
-                var x = vertices[_i2];
-                var y = vertices[_i2 + 1];
-                var res = {
-                  index: index,
-                  x: x,
-                  y: y
-                };
-                verticesList.push(res); // 有添加绑定骨骼才有权重
-
-                if (weightHash) {
-                  res.weightList = [];
-                  var weight = weightHash[index];
-                  weight.forEach(function (item) {
-                    var index = item.index,
-                        value = item.value;
-                    var _bonePoseHash$index = bonePoseHash[index],
-                        coords = _bonePoseHash$index.coords,
-                        pose = _bonePoseHash$index.pose; // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
-
-                    var _math$matrix$calPoint = math.matrix.calPoint([0, 0], pose),
-                        _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
-                        x0 = _math$matrix$calPoint2[0],
-                        y0 = _math$matrix$calPoint2[1];
-
-                    var _math$matrix$calPoint3 = math.matrix.calPoint([1, 0], pose),
-                        _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
-                        x1 = _math$matrix$calPoint4[0],
-                        y1 = _math$matrix$calPoint4[1];
-
-                    var dx = x1 - x0;
-                    var dy = y1 - y0;
-                    var theta; // 4个象限分开判断
-
-                    if (dx >= 0 && dy >= 0) {
-                      theta = -Math.atan(Math.abs(dy / dx));
-                    } else if (dx < 0 && dy >= 0) {
-                      theta = -Math.PI + Math.atan(Math.abs(dy / dx));
-                    } else if (dx < 0 && dy < 0) {
-                      theta = Math.PI - Math.atan(Math.abs(dy / dx));
-                    } else {
-                      theta = Math.atan(Math.abs(dy / dx));
-                    }
-
-                    var rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
-                    var translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
-                    var matrix = math.matrix.multiply(rotate, translate);
-                    res.weightList.push({
-                      index: index,
-                      value: value,
-                      matrix: matrix
-                    });
-                  });
-                }
+            var _loop = function _loop(_i2, _len2) {
+              var index = _i2 >> 1;
+              var x = vertices[_i2];
+              var y = vertices[_i2 + 1];
+              var res = {
+                index: index,
+                x: x,
+                y: y
               };
+              verticesList.push(res); // 有添加绑定骨骼才有权重
 
-              for (var _i2 = 0, _len2 = vertices.length; _i2 < _len2; _i2 += 2) {
-                _loop(_i2, _len2);
-              } // 三角形，切割图片坐标
+              if (weightHash) {
+                res.weightList = [];
+                var weight = weightHash[index];
+                weight.forEach(function (item) {
+                  var index = item.index,
+                      value = item.value;
+                  var _bonePoseHash$index = bonePoseHash[index],
+                      coords = _bonePoseHash$index.coords,
+                      pose = _bonePoseHash$index.pose; // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
 
+                  var _math$matrix$calPoint = math.matrix.calPoint([0, 0], pose),
+                      _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
+                      x0 = _math$matrix$calPoint2[0],
+                      y0 = _math$matrix$calPoint2[1];
 
-              var tex = texHash[name];
-              var width = tex.width,
-                  height = tex.height;
-              var triangleList = item.triangleList = [];
+                  var _math$matrix$calPoint3 = math.matrix.calPoint([1, 0], pose),
+                      _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
+                      x1 = _math$matrix$calPoint4[0],
+                      y1 = _math$matrix$calPoint4[1];
 
-              for (var _i3 = 0, _len3 = triangles.length; _i3 < _len3; _i3 += 3) {
-                var i1 = triangles[_i3];
-                var i2 = triangles[_i3 + 1];
-                var i3 = triangles[_i3 + 2]; // uv坐标
+                  var dx = x1 - x0;
+                  var dy = y1 - y0;
+                  var theta; // 4个象限分开判断
 
-                var p1x = uvs[i1 * 2];
-                var p1y = uvs[i1 * 2 + 1];
-                var p2x = uvs[i2 * 2];
-                var p2y = uvs[i2 * 2 + 1];
-                var p3x = uvs[i3 * 2];
-                var p3y = uvs[i3 * 2 + 1]; // uv贴图坐标根据尺寸映射真实坐标
+                  if (dx >= 0 && dy >= 0) {
+                    theta = -Math.atan(Math.abs(dy / dx));
+                  } else if (dx < 0 && dy >= 0) {
+                    theta = -Math.PI + Math.atan(Math.abs(dy / dx));
+                  } else if (dx < 0 && dy < 0) {
+                    theta = Math.PI - Math.atan(Math.abs(dy / dx));
+                  } else {
+                    theta = Math.atan(Math.abs(dy / dx));
+                  }
 
-                var x1 = p1x * width;
-                var y1 = p1y * height;
-                var x2 = p2x * width;
-                var y2 = p2y * height;
-                var x3 = p3x * width;
-                var y3 = p3y * height; // 从内心往外扩展约0.5px
-
-                var _math$geom$triangleIn = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3),
-                    _math$geom$triangleIn2 = _slicedToArray(_math$geom$triangleIn, 2),
-                    x0 = _math$geom$triangleIn2[0],
-                    y0 = _math$geom$triangleIn2[1];
-
-                var scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25); // 以内心为transformOrigin
-
-                var m = math.matrix.identity();
-                m[4] = -x0;
-                m[5] = -y0; // 缩放
-
-                var t = math.matrix.identity();
-                t[0] = t[3] = scale;
-                m = math.matrix.multiply(t, m); // 移动回去
-
-                t[4] = x0;
-                t[5] = y0;
-                m = math.matrix.multiply(t, m); // 获取扩展后的三角形顶点坐标
-
-                var _math$geom$transformP = math.geom.transformPoint(m, x1, y1),
-                    _math$geom$transformP2 = _slicedToArray(_math$geom$transformP, 2),
-                    sx1 = _math$geom$transformP2[0],
-                    sy1 = _math$geom$transformP2[1];
-
-                var _math$geom$transformP3 = math.geom.transformPoint(m, x2, y2),
-                    _math$geom$transformP4 = _slicedToArray(_math$geom$transformP3, 2),
-                    sx2 = _math$geom$transformP4[0],
-                    sy2 = _math$geom$transformP4[1];
-
-                var _math$geom$transformP5 = math.geom.transformPoint(m, x3, y3),
-                    _math$geom$transformP6 = _slicedToArray(_math$geom$transformP5, 2),
-                    sx3 = _math$geom$transformP6[0],
-                    sy3 = _math$geom$transformP6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
-                // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
-
-
-                triangleList.push({
-                  index: Math.round(_i3 / 3),
-                  indexList: [i1, i2, i3],
-                  // ox,
-                  // oy,
-                  // ow,
-                  // oh,
-                  // points: [
-                  //   [p1x, p1y],
-                  //   [p2x, p2y],
-                  //   [p3x, p3y]
-                  // ],
-                  coords: [[x1, y1], [x2, y2], [x3, y3]],
-                  scale: scale,
-                  scaleCoords: [[sx1, sy1], [sx2, sy2], [sx3, sy3]],
-                  width: width,
-                  height: height
+                  var rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
+                  var translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
+                  var matrix = math.matrix.multiply(rotate, translate);
+                  res.weightList.push({
+                    index: index,
+                    value: value,
+                    matrix: matrix
+                  });
                 });
               }
+            };
+
+            for (var _i2 = 0, _len2 = vertices.length; _i2 < _len2; _i2 += 2) {
+              _loop(_i2);
+            } // 三角形，切割图片坐标
+
+
+            var tex = texHash[name];
+            var width = tex.width,
+                height = tex.height;
+            var triangleList = item.triangleList = [];
+
+            for (var _i3 = 0, _len3 = triangles.length; _i3 < _len3; _i3 += 3) {
+              var i1 = triangles[_i3];
+              var i2 = triangles[_i3 + 1];
+              var i3 = triangles[_i3 + 2]; // uv坐标
+
+              var p1x = uvs[i1 * 2];
+              var p1y = uvs[i1 * 2 + 1];
+              var p2x = uvs[i2 * 2];
+              var p2y = uvs[i2 * 2 + 1];
+              var p3x = uvs[i3 * 2];
+              var p3y = uvs[i3 * 2 + 1]; // uv贴图坐标根据尺寸映射真实坐标
+
+              var x1 = p1x * width;
+              var y1 = p1y * height;
+              var x2 = p2x * width;
+              var y2 = p2y * height;
+              var x3 = p3x * width;
+              var y3 = p3y * height; // 从内心往外扩展约0.5px
+
+              var _math$geom$triangleIn = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3),
+                  _math$geom$triangleIn2 = _slicedToArray(_math$geom$triangleIn, 2),
+                  x0 = _math$geom$triangleIn2[0],
+                  y0 = _math$geom$triangleIn2[1];
+
+              var scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25); // 以内心为transformOrigin
+
+              var m = math.matrix.identity();
+              m[4] = -x0;
+              m[5] = -y0; // 缩放
+
+              var t = math.matrix.identity();
+              t[0] = t[3] = scale;
+              m = math.matrix.multiply(t, m); // 移动回去
+
+              t[4] = x0;
+              t[5] = y0;
+              m = math.matrix.multiply(t, m); // 获取扩展后的三角形顶点坐标
+
+              var _math$geom$transformP = math.geom.transformPoint(m, x1, y1),
+                  _math$geom$transformP2 = _slicedToArray(_math$geom$transformP, 2),
+                  sx1 = _math$geom$transformP2[0],
+                  sy1 = _math$geom$transformP2[1];
+
+              var _math$geom$transformP3 = math.geom.transformPoint(m, x2, y2),
+                  _math$geom$transformP4 = _slicedToArray(_math$geom$transformP3, 2),
+                  sx2 = _math$geom$transformP4[0],
+                  sy2 = _math$geom$transformP4[1];
+
+              var _math$geom$transformP5 = math.geom.transformPoint(m, x3, y3),
+                  _math$geom$transformP6 = _slicedToArray(_math$geom$transformP5, 2),
+                  sx3 = _math$geom$transformP6[0],
+                  sy3 = _math$geom$transformP6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
+              // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
+
+
+              triangleList.push({
+                index: Math.round(_i3 / 3),
+                indexList: [i1, i2, i3],
+                // ox,
+                // oy,
+                // ow,
+                // oh,
+                // points: [
+                //   [p1x, p1y],
+                //   [p2x, p2y],
+                //   [p3x, p3y]
+                // ],
+                coords: [[x1, y1], [x2, y2], [x3, y3]],
+                scale: scale,
+                scaleCoords: [[sx1, sy1], [sx2, sy2], [sx3, sy3]],
+                width: width,
+                height: height
+              });
             }
           })();
         }
@@ -916,7 +916,7 @@
             var cos = Math.cos(d);
             var _t = [cos, sin, -sin, cos, 0, 0];
             matrix = math$1.matrix.multiply(matrix, _t);
-          } // tfo为图片中心
+          } // tfo为图片中心，可合并
 
 
           t = math$1.matrix.identity();
@@ -966,6 +966,7 @@
       var name = item.name,
           _item$displayIndex = item.displayIndex,
           displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
+          blendMode = item.blendMode,
           _item$color = item.color;
       _item$color = _item$color === void 0 ? {} : _item$color;
       var _item$color$aM = _item$color.aM,
@@ -973,6 +974,11 @@
 
       if (displayIndex < 0) {
         return;
+      } // 叠加模式
+
+
+      if (blendMode === 'add') {
+        ctx.globalCompositeOperation = 'lighter';
       } // 透明度
 
 
@@ -1028,7 +1034,12 @@
           ctx.clip();
           ctx.drawImage(tex.source, sx - tex.x, sy - tex.y);
           ctx.restore();
-        } // 恢复透明度
+        } // 恢复模式
+
+
+      if (blendMode) {
+        ctx.globalCompositeOperation = 'source-over';
+      } // 恢复透明度
 
 
       if (aM < 100) {
@@ -1118,7 +1129,8 @@
     _createClass(Dragonbones, [{
       key: "componentDidMount",
       value: function componentDidMount() {
-        // 劫持本隐藏节点的render()，在每次渲染时绘制骨骼动画
+        var self = this; // 劫持本隐藏节点的render()，在每次渲染时绘制骨骼动画
+
         var shadowRoot = this.shadowRoot;
         var fake = this.ref.fake;
         var _this$props = this.props,
@@ -1142,7 +1154,11 @@
               var animation = animationHash[defaultActions[0].gotoAndPlay];
               var animationList = animation.animationList,
                   options = animation.options;
-              options.playbackRate = 0.5; // 隐藏节点模拟一段不展示的动画，带动每次渲染
+
+              if (!karas.util.isNil(self.props.playbackRate)) {
+                options.playbackRate = self.props.playbackRate;
+              } // 隐藏节点模拟一段不展示的动画，带动每次渲染
+
 
               var a = fake.animate([{
                 opacity: 0
@@ -1161,10 +1177,12 @@
                       sy = shadowRoot.sy,
                       matrixEvent = shadowRoot.matrixEvent;
                   render.canvasSlot(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
-                  render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
-                  render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
-                } // a.pause();
 
+                  if (self.props.debug) {
+                    render.canvasTriangle(ctx, sx, sy, matrixEvent, slot, skinHash, texHash);
+                    render.canvasBone(ctx, sx, sy, matrixEvent, bone[0]);
+                  }
+                }
               };
             }
           });

@@ -200,7 +200,7 @@ function calSlot(slot, skinHash, bone, boneHash, texHash) {
         let t = [cos, sin, -sin, cos, 0, 0];
         matrix = math.matrix.multiply(matrix, t);
       }
-      // tfo为图片中心
+      // tfo为图片中心，可合并
       t = math.matrix.identity();
       t[4] = tex.frameWidth * 0.5;
       t[5] = tex.frameHeight * 0.5;
