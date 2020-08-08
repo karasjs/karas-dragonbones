@@ -246,7 +246,7 @@
     var boneHash = parseBone(bone);
     var slotHash = parseSlot(slot);
     var skinHash = parseSkin(skin, texHash);
-    var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash);
+    var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
     return {
       bone: bone,
       boneHash: boneHash,
@@ -264,22 +264,6 @@
     var hash = {};
     data.forEach(function (item) {
       hash[item.name] = item;
-
-      if (!item.color) {
-        item.color = {
-          aM: 100
-        };
-      } else {
-        if (item.color.aM === undefined) {
-          item.color.aM = 100;
-        }
-      } // if(!color) {
-      //   item.opacity = 1;
-      // }
-      // else {
-      //   item.opacitiy = color.aM === undefined ? 1 : (color.aM / 100);
-      // }
-
     });
     return hash;
   }
@@ -574,7 +558,6 @@
       item.options = {
         duration: 1000 * duration / frameRate,
         iterations: playTimes === 0 ? Infinity : playTimes,
-        fps: frameRate,
         fill: 'forwards'
       }; // 骨骼动画列表
 
@@ -733,11 +716,12 @@
                 d = _frame$duration5 === void 0 ? 1 : _frame$duration5;
             var offset = _offsetSum3 / duration;
             _offsetSum3 += d;
-            frame.offset = offset; // 没有value就用原生value
+            frame.offset = offset; // 没有value就用默认值
 
             if (!frame.value) {
-              var _slot = slotHash[name];
-              frame.value = _slot.color;
+              frame.value = {
+                aM: 100
+              };
             }
 
             if (frame.value.aM === undefined) {
@@ -1093,7 +1077,9 @@
           _item$displayIndex = item.displayIndex,
           displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
           blendMode = item.blendMode,
-          _item$color$aM = item.color.aM,
+          _item$color = item.color;
+      _item$color = _item$color === void 0 ? {} : _item$color;
+      var _item$color$aM = _item$color.aM,
           aM = _item$color$aM === void 0 ? 100 : _item$color$aM; // 插槽隐藏不显示
 
       if (displayIndex < 0) {
@@ -1278,6 +1264,10 @@
 
               if (!karas.util.isNil(self.props.playbackRate)) {
                 options.playbackRate = self.props.playbackRate;
+              }
+
+              if (!karas.util.isNil(self.props.fps)) {
+                options.fps = self.props.fps;
               } // 隐藏节点模拟一段不展示的动画，带动每次渲染
 
 

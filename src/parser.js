@@ -72,22 +72,6 @@ function parseSlot(data) {
   let hash = {};
   data.forEach(item => {
     hash[item.name] = item;
-    if(!item.color) {
-      item.color = {
-        aM: 100,
-      };
-    }
-    else {
-      if(item.color.aM === undefined) {
-        item.color.aM = 100;
-      }
-    }
-    // if(!color) {
-    //   item.opacity = 1;
-    // }
-    // else {
-    //   item.opacitiy = color.aM === undefined ? 1 : (color.aM / 100);
-    // }
   });
   return hash;
 }
@@ -351,7 +335,6 @@ function parseAnimation(data, frameRate, boneHash, slotHash) {
     item.options = {
       duration: 1000 * duration / frameRate,
       iterations: playTimes === 0 ? Infinity : playTimes,
-      fps: frameRate,
       fill: 'forwards',
     };
     // 骨骼动画列表
@@ -460,10 +443,11 @@ function parseAnimation(data, frameRate, boneHash, slotHash) {
           let offset = offsetSum / duration;
           offsetSum += d;
           frame.offset = offset;
-          // 没有value就用原生value
+          // 没有value就用默认值
           if(!frame.value) {
-            let slot = slotHash[name];
-            frame.value = slot.color;
+            frame.value = {
+              aM: 100,
+            };
           }
           if(frame.value.aM === undefined) {
             frame.value.aM = 100;

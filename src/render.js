@@ -22,7 +22,7 @@ function canvasBone(ctx, sx, sy, matrixEvent, bone) {
 function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
   let opacity = ctx.globalAlpha;
   slot.forEach(item => {
-    let { name, displayIndex = 0, blendMode, color: { aM = 100 } } = item;
+    let { name, displayIndex = 0, blendMode, color: { aM = 100 } = {} } = item;
     // 插槽隐藏不显示
     if(displayIndex < 0) {
       return;

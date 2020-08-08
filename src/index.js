@@ -30,6 +30,9 @@ class Dragonbones extends karas.Component {
           if(!karas.util.isNil(self.props.playbackRate)) {
             options.playbackRate = self.props.playbackRate;
           }
+          if(!karas.util.isNil(self.props.fps)) {
+            options.fps = self.props.fps;
+          }
 
           // 隐藏节点模拟一段不展示的动画，带动每次渲染
           let a = this.animation = fake.animate([
