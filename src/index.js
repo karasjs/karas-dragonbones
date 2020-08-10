@@ -26,7 +26,7 @@ class Dragonbones extends karas.Component {
 
         if(defaultActions && defaultActions.length) {
           let animation = animationHash[defaultActions[0].gotoAndPlay];
-          let { boneAnimationList, slotAnimationList, options } = animation;
+          let { boneAnimationList, slotAnimationList, ffdAnimationHash, options } = animation;
           if(!karas.util.isNil(self.props.playbackRate)) {
             options.playbackRate = self.props.playbackRate;
           }
@@ -49,8 +49,8 @@ class Dragonbones extends karas.Component {
             let offset = Math.min(1, a.currentTime / a.duration);
             util.animateBoneMatrix(boneAnimationList, offset, boneHash);
             util.mergeBoneMatrix(bone[0]);
-            util.animateSlot(slotAnimationList, offset, slotHash);
-            util.calSlot(slot, skinHash, bone, boneHash, texHash);
+            util.animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash);
+            util.calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash);
             if(renderMode === karas.mode.CANVAS) {
               let { matrixEvent, computedStyle } = shadowRoot;
               // 先在dom中居中
@@ -72,6 +72,7 @@ class Dragonbones extends karas.Component {
                 }
               }
             }
+            // a.pause();
           };
         }
       });

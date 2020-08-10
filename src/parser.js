@@ -54,7 +54,7 @@ function parseSke(ske, texHash) {
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
   let skinHash = parseSkin(skin, texHash);
-  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash);
+  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash, skinHash);
   return {
     bone,
     boneHash,
@@ -327,10 +327,10 @@ function triangleOriginCoords(x1, y1, x2, y2, x3, y3) {
   return [xMin, yMin, xMax - xMin, yMax - yMin];
 }
 
-function parseAnimation(data, frameRate, boneHash, slotHash) {
+function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
   let hash = {};
   data.forEach(item => {
-    let { duration, playTimes, name, bone = [], slot = [] } = item;
+    let { duration, playTimes, name, bone = [], slot = [], ffd = [] } = item;
     hash[name] = item;
     item.options = {
       duration: 1000 * duration / frameRate,
@@ -425,7 +425,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash) {
     });
     // 插槽动画列表
     item.slotAnimationList = slot.map(item => {
-      let { name, displayFrame, colorFrame } = item;
+      let { displayFrame, colorFrame } = item;
       if(displayFrame) {
         let offsetSum = 0;
         displayFrame.forEach(frame => {
@@ -454,6 +454,46 @@ function parseAnimation(data, frameRate, boneHash, slotHash) {
           }
           if(last) {
             last.da = frame.value.aM - last.value.aM;
+          }
+          last = frame;
+        });
+      }
+      return item;
+    });
+    // 自由变形列表
+    let ffdAnimationHash = item.ffdAnimationHash = {};
+    item.ffdAnimationList = ffd.map(item => {
+      let { name, slot, frame } = item;
+      // db限制了不能出现在名字里
+      ffdAnimationHash[slot + '>' + name] = item;
+      if(frame) {
+        let offsetSum = 0;
+        let last;
+        frame.forEach(frame => {
+          let { vertices, duration: d = 1, offset: os } = frame;
+          if(os) {
+            for(let i = 0; i < os; i++) {
+              vertices.unshift(0);
+            }
+          }
+          let offset = offsetSum / duration;
+          offsetSum += d;
+          frame.offset = offset;
+          // 顶点变形数据vertices都是偏移量，无偏移为空
+          if(last) {
+            let verticesLast = last.vertices;
+            if(verticesLast && vertices) {
+              last.dv = [];
+              for(let i = 0, len = Math.max(verticesLast.length, vertices.length); i < len; i++) {
+                last.dv.push((vertices[i] || 0) - (verticesLast[i] || 0));
+              }
+            }
+            else if(verticesLast) {
+              last.dv = last.vertices.map(n => -n);
+            }
+            else if(vertices) {
+              last.dv = vertices;
+            }
           }
           last = frame;
         });

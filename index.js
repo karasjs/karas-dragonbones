@@ -544,7 +544,7 @@
     return (d + px) / d;
   }
 
-  function parseAnimation(data, frameRate, boneHash, slotHash) {
+  function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
     var hash = {};
     data.forEach(function (item) {
       var duration = item.duration,
@@ -553,7 +553,9 @@
           _item$bone = item.bone,
           bone = _item$bone === void 0 ? [] : _item$bone,
           _item$slot = item.slot,
-          slot = _item$slot === void 0 ? [] : _item$slot;
+          slot = _item$slot === void 0 ? [] : _item$slot,
+          _item$ffd = item.ffd,
+          ffd = _item$ffd === void 0 ? [] : _item$ffd;
       hash[name] = item;
       item.options = {
         duration: 1000 * duration / frameRate,
@@ -693,8 +695,7 @@
       }); // 插槽动画列表
 
       item.slotAnimationList = slot.map(function (item) {
-        var name = item.name,
-            displayFrame = item.displayFrame,
+        var displayFrame = item.displayFrame,
             colorFrame = item.colorFrame;
 
         if (displayFrame) {
@@ -730,6 +731,58 @@
 
             if (last) {
               last.da = frame.value.aM - last.value.aM;
+            }
+
+            last = frame;
+          });
+        }
+
+        return item;
+      }); // 自由变形列表
+
+      var ffdAnimationHash = item.ffdAnimationHash = {};
+      item.ffdAnimationList = ffd.map(function (item) {
+        var name = item.name,
+            slot = item.slot,
+            frame = item.frame; // db限制了不能出现在名字里
+
+        ffdAnimationHash[slot + '>' + name] = item;
+
+        if (frame) {
+          var offsetSum = 0;
+          var last;
+          frame.forEach(function (frame) {
+            var vertices = frame.vertices,
+                _frame$duration6 = frame.duration,
+                d = _frame$duration6 === void 0 ? 1 : _frame$duration6,
+                os = frame.offset;
+
+            if (os) {
+              for (var i = 0; i < os; i++) {
+                vertices.unshift(0);
+              }
+            }
+
+            var offset = offsetSum / duration;
+            offsetSum += d;
+            frame.offset = offset; // 顶点变形数据vertices都是偏移量，无偏移为空
+
+            if (last) {
+              var verticesLast = last.vertices;
+
+              if (verticesLast && vertices) {
+                last.dv = [];
+
+                for (var _i4 = 0, len = Math.max(verticesLast.length, vertices.length); _i4 < len; _i4++) {
+                  last.dv.push((vertices[_i4] || 0) - (verticesLast[_i4] || 0));
+                }
+              } else if (verticesLast) {
+                last.dv = last.vertices.map(function (n) {
+                  return -n;
+                });
+              } else if (vertices) {
+                last.dv = vertices;
+              }
             }
 
             last = frame;
@@ -887,15 +940,16 @@
     });
   }
   /**
-   * 根据当前动画时间执行slot的动画
-   * @param animationList
+   * 根据当前动画时间执行slot的动画，确定显示slot下的皮肤索引和透明度
+   * @param slotAnimationList
    * @param offset
    * @param slotHash
+   * @param ffdAnimationHash
    */
 
 
-  function animateSlot(animationList, offset, slotHash) {
-    animationList.forEach(function (item) {
+  function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
+    slotAnimationList.forEach(function (item) {
       var name = item.name,
           displayFrame = item.displayFrame,
           colorFrame = item.colorFrame;
@@ -930,15 +984,17 @@
   }
   /**
    * 根据当前骨骼状态计算slot中显示对象变换matrix
+   * @param offset
    * @param slot
    * @param skinHash
    * @param bone
    * @param boneHash
    * @param texHash
+   * @param ffdAnimationHash
    */
 
 
-  function calSlot(slot, skinHash, bone, boneHash, texHash) {
+  function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash) {
     slot.forEach(function (item) {
       var name = item.name,
           parent = item.parent,
@@ -954,7 +1010,8 @@
 
       if (displayTarget.type === 'mesh') {
         var verticesList = displayTarget.verticesList,
-            triangleList = displayTarget.triangleList;
+            triangleList = displayTarget.triangleList; // 先进行顶点变换
+
         verticesList.forEach(function (item) {
           var weightList = item.weightList; // 有绑定骨骼的mesh，计算权重
 
@@ -971,8 +1028,7 @@
                 m[i] += offset[i] * value;
               }
             });
-            item.matrix = m;
-            item.coords = math$1.geom.transformPoint(m, 0, 0);
+            item.matrix = m; // item.coords = math.geom.transformPoint(m, 0, 0);
           } // 没有绑定认为直属父骨骼
           else {
               var parentBoneMatrix = boneHash[parent].currentMatrix;
@@ -980,17 +1036,90 @@
 
               var _m3 = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
 
-              item.matrix = _m3;
-              item.coords = math$1.geom.transformPoint(_m3, 0, 0);
+              item.matrix = _m3; // item.coords = math.geom.transformPoint(m, 0, 0);
+            } // 每次先清空ffd自由变换的数据
+
+
+          item.matrixF = null;
+        }); // 如果有ffd自定义顶点变换，计算偏移量matrix
+
+        var ffd = ffdAnimationHash[name + '>' + displayTarget.name];
+
+        if (ffd) {
+          var frame = ffd.frame;
+
+          if (frame) {
+            var len = frame.length;
+            var i = binarySearch(0, len - 1, offset, frame);
+            var current = frame[i]; // 是否最后一帧
+
+            if (i === len - 1) {
+              var vertices = current.vertices;
+
+              if (vertices) {
+                for (var _i2 = 0, _len = vertices.length; _i2 < _len - 1; _i2 += 2) {
+                  var x = vertices[_i2];
+                  var y = vertices[_i2 + 1];
+
+                  if (x === 0 && y === 0) {
+                    continue;
+                  }
+
+                  var index = _i2 >> 1;
+                  var target = verticesList[index];
+                  var m = [1, 0, 0, 1, x, y];
+                  target.matrixF = math$1.matrix.multiply(target.matrix, m);
+                }
+              }
+            } else {
+              var next = frame[i + 1];
+              var total = next.offset - current.offset;
+              var percent = (offset - current.offset) / total;
+              var _vertices = current.vertices,
+                  dv = current.dv;
+
+              if (_vertices || dv) {
+                for (var _i3 = 0, _len2 = (_vertices || dv).length; _i3 < _len2 - 1; _i3 += 2) {
+                  var _x = void 0,
+                      _y = void 0;
+
+                  if (_vertices) {
+                    _x = _vertices[_i3];
+                    _y = _vertices[_i3 + 1];
+                  } else {
+                    _x = _y = 0;
+                  }
+
+                  if (dv) {
+                    _x += (dv[_i3] || 0) * percent;
+                    _y += (dv[_i3 + 1] || 0) * percent;
+                  }
+
+                  if (_x === 0 && _y === 0) {
+                    continue;
+                  }
+
+                  var _index = _i3 >> 1;
+
+                  var _target = verticesList[_index];
+                  var _m4 = [1, 0, 0, 1, _x, _y];
+                  _target.matrixF = math$1.matrix.multiply(_target.matrix, _m4);
+                }
+              }
             }
-        });
+          }
+        } // 三角形根据顶点坐标变化计算仿射变换matrix
+
+
         triangleList.forEach(function (item) {
           var indexList = item.indexList,
               coords = item.coords;
           var source = coords[0].concat(coords[1]).concat(coords[2]);
           var target = [];
           indexList.forEach(function (i) {
-            target = target.concat(verticesList[i].coords);
+            var vertices = verticesList[i];
+            var coords = math$1.geom.transformPoint(vertices.matrixF || vertices.matrix, 0, 0);
+            target = target.concat(coords);
           }); // 先交换确保3个点顺序
 
           var _math$tar$exchangeOrd = math$1.tar.exchangeOrder(source, target),
@@ -1260,6 +1389,7 @@
               var animation = animationHash[defaultActions[0].gotoAndPlay];
               var boneAnimationList = animation.boneAnimationList,
                   slotAnimationList = animation.slotAnimationList,
+                  ffdAnimationHash = animation.ffdAnimationHash,
                   options = animation.options;
 
               if (!karas.util.isNil(self.props.playbackRate)) {
@@ -1281,8 +1411,8 @@
                 var offset = Math.min(1, a.currentTime / a.duration);
                 util.animateBoneMatrix(boneAnimationList, offset, boneHash);
                 util.mergeBoneMatrix(bone[0]);
-                util.animateSlot(slotAnimationList, offset, slotHash);
-                util.calSlot(slot, skinHash, bone, boneHash, texHash);
+                util.animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash);
+                util.calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash);
 
                 if (renderMode === karas.mode.CANVAS) {
                   var matrixEvent = shadowRoot.matrixEvent,
@@ -1304,7 +1434,8 @@
                       render.canvasBone(ctx, matrixEvent, bone[0]);
                     }
                   }
-                }
+                } // a.pause();
+
               };
             }
           });

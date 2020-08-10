@@ -127,13 +127,14 @@ function mergeChildBoneMatrix(bone, parentMatrix) {
 }
 
 /**
- * 根据当前动画时间执行slot的动画
- * @param animationList
+ * 根据当前动画时间执行slot的动画，确定显示slot下的皮肤索引和透明度
+ * @param slotAnimationList
  * @param offset
  * @param slotHash
+ * @param ffdAnimationHash
  */
-function animateSlot(animationList, offset, slotHash) {
-  animationList.forEach(item => {
+function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
+  slotAnimationList.forEach(item => {
     let { name, displayFrame, colorFrame } = item;
     let slot = slotHash[name];
     if(displayFrame) {
@@ -163,13 +164,15 @@ function animateSlot(animationList, offset, slotHash) {
 
 /**
  * 根据当前骨骼状态计算slot中显示对象变换matrix
+ * @param offset
  * @param slot
  * @param skinHash
  * @param bone
  * @param boneHash
  * @param texHash
+ * @param ffdAnimationHash
  */
-function calSlot(slot, skinHash, bone, boneHash, texHash) {
+function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash) {
   slot.forEach(item => {
     let { name, parent, displayIndex = 0 } = item;
     // 插槽隐藏不显示
@@ -181,6 +184,7 @@ function calSlot(slot, skinHash, bone, boneHash, texHash) {
     // 网格类型
     if(displayTarget.type === 'mesh') {
       let { verticesList, triangleList } = displayTarget;
+      // 先进行顶点变换
       verticesList.forEach(item => {
         let { weightList } = item;
         // 有绑定骨骼的mesh，计算权重
@@ -195,7 +199,7 @@ function calSlot(slot, skinHash, bone, boneHash, texHash) {
             }
           });
           item.matrix = m;
-          item.coords = math.geom.transformPoint(m, 0, 0);
+          // item.coords = math.geom.transformPoint(m, 0, 0);
         }
         // 没有绑定认为直属父骨骼
         else {
@@ -203,15 +207,76 @@ function calSlot(slot, skinHash, bone, boneHash, texHash) {
           let offsetMatrix = [1, 0, 0, 1, item.x, item.y];
           let m = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
           item.matrix = m;
-          item.coords = math.geom.transformPoint(m, 0, 0);
+          // item.coords = math.geom.transformPoint(m, 0, 0);
         }
+        // 每次先清空ffd自由变换的数据
+        item.matrixF = null;
       });
+      // 如果有ffd自定义顶点变换，计算偏移量matrix
+      let ffd = ffdAnimationHash[name + '>' + displayTarget.name];
+      if(ffd) {
+        let { frame } = ffd;
+        if(frame) {
+          let len = frame.length;
+          let i = binarySearch(0, len - 1, offset, frame);
+          let current = frame[i];
+          // 是否最后一帧
+          if(i === len - 1) {
+            let { vertices } = current;
+            if(vertices) {
+              for(let i = 0, len = vertices.length; i < len - 1; i += 2) {
+                let x = vertices[i];
+                let y = vertices[i + 1];
+                if(x === 0 && y === 0) {
+                  continue;
+                }
+                let index = i >> 1;
+                let target = verticesList[index];
+                let m = [1, 0, 0, 1, x, y];
+                target.matrixF = math.matrix.multiply(target.matrix, m);
+              }
+            }
+          }
+          else {
+            let next = frame[i + 1];
+            let total = next.offset - current.offset;
+            let percent = (offset - current.offset) / total;
+            let { vertices, dv } = current;
+            if(vertices || dv) {
+              for(let i = 0, len = (vertices || dv).length; i < len - 1; i += 2) {
+                let x, y;
+                if(vertices) {
+                  x = vertices[i];
+                  y = vertices[i + 1];
+                }
+                else {
+                  x = y = 0;
+                }
+                if(dv) {
+                  x += (dv[i] || 0) * percent;
+                  y += (dv[i + 1] || 0) * percent;
+                }
+                if(x === 0 && y === 0) {
+                  continue;
+                }
+                let index = i >> 1;
+                let target = verticesList[index];
+                let m = [1, 0, 0, 1, x, y];
+                target.matrixF = math.matrix.multiply(target.matrix, m);
+              }
+            }
+          }
+        }
+      }
+      // 三角形根据顶点坐标变化计算仿射变换matrix
       triangleList.forEach(item => {
         let { indexList, coords } = item;
         let source = coords[0].concat(coords[1]).concat(coords[2]);
         let target = [];
         indexList.forEach(i => {
-          target = target.concat(verticesList[i].coords);
+          let vertices = verticesList[i];
+          let coords = math.geom.transformPoint(vertices.matrixF || vertices.matrix, 0, 0);
+          target = target.concat(coords);
         });
         // 先交换确保3个点顺序
         let [source1, target1] = math.tar.exchangeOrder(source, target);
