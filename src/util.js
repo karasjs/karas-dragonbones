@@ -307,6 +307,11 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         let t = [cos, sin, -sin, cos, 0, 0];
         matrix = math.matrix.multiply(matrix, t);
       }
+      // 可选缩放
+      if(transform.scX !== undefined || transform.scY !== undefined) {
+        let t = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+        matrix = math.matrix.multiply(matrix, t);
+      }
       // tfo为图片中心，可合并
       t = math.matrix.identity();
       t[4] = tex.frameWidth * 0.5;

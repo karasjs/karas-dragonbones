@@ -20,7 +20,6 @@ function canvasBone(ctx, matrixEvent, bone) {
 }
 
 function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
-  let opacity = ctx.globalAlpha;
   slot.forEach(item => {
     let { name, displayIndex = 0, displayIndexA = displayIndex, blendMode, color = {}, colorA = color } = item;
     // 插槽隐藏不显示
@@ -32,6 +31,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.globalCompositeOperation = 'lighter';
     }
     let { aM = 100 } = colorA;
+    let op = ctx.globalAlpha;
     // 透明度
     ctx.globalAlpha *= aM / 100;
     let skin = skinHash[name];
@@ -56,7 +56,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(tex.source, -tex.x, -tex.y);
+        ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
         ctx.restore();
       });
     }
@@ -71,22 +71,21 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.save();
       ctx.setTransform(...matrix);
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(tex.width, 0);
-      ctx.lineTo(tex.width, tex.height);
-      ctx.lineTo(0, tex.height);
+      ctx.moveTo(-tex.frameX, -tex.frameY);
+      ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
+      ctx.lineTo(-tex.frameX + tex.width,  -tex.frameY + tex.height);
+      ctx.lineTo(-tex.frameX,  -tex.frameY + tex.height);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(tex.source, -tex.x, -tex.y);
+      ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
       ctx.restore();
     }
     // 恢复模式
     if(blendMode) {
       ctx.globalCompositeOperation = 'source-over';
     }
+    ctx.globalAlpha = op;
   });
-  // 恢复透明度
-  ctx.globalAlpha = opacity;
 }
 
 function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
@@ -136,9 +135,17 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(tex.width, 0);
-      ctx.lineTo(tex.width, tex.height);
-      ctx.lineTo(0, tex.height)
+      ctx.lineTo(tex.frameWidth, 0);
+      ctx.lineTo(tex.frameWidth, tex.frameHeight);
+      ctx.lineTo(0, tex.frameHeight);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
+      ctx.beginPath();
+      ctx.moveTo(-tex.frameX, -tex.frameY);
+      ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
+      ctx.lineTo(-tex.frameX + tex.width,  -tex.frameY + tex.height);
+      ctx.lineTo(-tex.frameX,  -tex.frameY + tex.height);
       ctx.closePath();
       ctx.stroke();
       ctx.restore();

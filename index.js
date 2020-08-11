@@ -197,8 +197,8 @@
   var inject = karas.inject,
       math = karas.math;
 
-  function parseAndLoadTex(tex, cb) {
-    var src = tex.imagePath;
+  function parseAndLoadTex(tex, cb, path) {
+    var src = path || tex.imagePath;
     var img = document.createElement('img');
     var texHash = {};
 
@@ -1170,6 +1170,12 @@
             var cos = Math.cos(d);
             var _t = [cos, sin, -sin, cos, 0, 0];
             matrix = math$1.matrix.multiply(matrix, _t);
+          } // 可选缩放
+
+
+          if (transform.scX !== undefined || transform.scY !== undefined) {
+            var _t2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+            matrix = math$1.matrix.multiply(matrix, _t2);
           } // tfo为图片中心，可合并
 
 
@@ -1227,7 +1233,6 @@
   }
 
   function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
-    var opacity = ctx.globalAlpha;
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex = item.displayIndex,
@@ -1250,7 +1255,8 @@
       }
 
       var _colorA$aM = colorA.aM,
-          aM = _colorA$aM === void 0 ? 100 : _colorA$aM; // 透明度
+          aM = _colorA$aM === void 0 ? 100 : _colorA$aM;
+      var op = ctx.globalAlpha; // 透明度
 
       ctx.globalAlpha *= aM / 100;
       var skin = skinHash[name];
@@ -1277,7 +1283,7 @@
           ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(tex.source, -tex.x, -tex.y);
+          ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
           ctx.restore();
         });
       } // 默认图片类型
@@ -1293,13 +1299,13 @@
           ctx.save();
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(tex.width, 0);
-          ctx.lineTo(tex.width, tex.height);
-          ctx.lineTo(0, tex.height);
+          ctx.moveTo(-tex.frameX, -tex.frameY);
+          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
+          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY + tex.height);
+          ctx.lineTo(-tex.frameX, -tex.frameY + tex.height);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(tex.source, -tex.x, -tex.y);
+          ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
           ctx.restore();
         } // 恢复模式
 
@@ -1307,9 +1313,9 @@
       if (blendMode) {
         ctx.globalCompositeOperation = 'source-over';
       }
-    }); // 恢复透明度
 
-    ctx.globalAlpha = opacity;
+      ctx.globalAlpha = op;
+    });
   }
 
   function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
@@ -1365,9 +1371,17 @@
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(tex.width, 0);
-          ctx.lineTo(tex.width, tex.height);
-          ctx.lineTo(0, tex.height);
+          ctx.lineTo(tex.frameWidth, 0);
+          ctx.lineTo(tex.frameWidth, tex.frameHeight);
+          ctx.lineTo(0, tex.frameHeight);
+          ctx.closePath();
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
+          ctx.beginPath();
+          ctx.moveTo(-tex.frameX, -tex.frameY);
+          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
+          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY + tex.height);
+          ctx.lineTo(-tex.frameX, -tex.frameY + tex.height);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -1426,6 +1440,7 @@
             _this.skin = skin;
             _this.skinHash = skinHash;
             _this.animationHash = animationHash;
+            _this.canvas = canvas;
             var defaultAction; // 优先props指定，有可能不存在
 
             if (props.defaultAction && animationHash[props.defaultAction]) {
@@ -1443,7 +1458,7 @@
                 a.gotoAndStop(0);
               }
             }
-          });
+          }, props.imagePath);
         }
       }
     }, {
@@ -1511,11 +1526,44 @@
               if (self.props.debugBone) {
                 render.canvasBone(ctx, matrixEvent, self.bone[0]);
               }
+
+              if (self.props.debugSlot) {
+                render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+              }
             }
           }
         };
 
         return a;
+      }
+    }, {
+      key: "changeImage",
+      value: function changeImage(src) {
+        if (src) {
+          var tex = this.props.tex;
+          var texHash = this.texHash;
+          var img = document.createElement('img');
+
+          img.onload = function () {
+            karas.inject.IMG[src] = {
+              width: tex.width,
+              height: tex.height,
+              state: karas.inject.LOADED,
+              source: img,
+              url: src
+            };
+            tex.SubTexture.forEach(function (item) {
+              var name = item.name;
+              texHash[name].source = img;
+            });
+          };
+
+          img.onerror = function () {
+            throw new Error('Can not find tex: ' + src);
+          };
+
+          img.src = src;
+        }
       }
     }, {
       key: "render",

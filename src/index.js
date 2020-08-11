@@ -31,6 +31,7 @@ class Dragonbones extends karas.Component {
         this.skin = skin;
         this.skinHash = skinHash;
         this.animationHash = animationHash;
+        this.canvas = canvas;
 
         let defaultAction;
         // 优先props指定，有可能不存在
@@ -50,7 +51,7 @@ class Dragonbones extends karas.Component {
             a.gotoAndStop(0);
           }
         }
-      });
+      }, props.imagePath);
     }
   }
 
@@ -108,10 +109,38 @@ class Dragonbones extends karas.Component {
           if(self.props.debugBone) {
             render.canvasBone(ctx, matrixEvent, self.bone[0]);
           }
+          if(self.props.debugSlot) {
+            render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+          }
         }
       }
     };
     return a;
+  }
+
+  changeImage(src) {
+    if(src) {
+      let tex = this.props.tex;
+      let texHash = this.texHash;
+      let img = document.createElement('img');
+      img.onload = function() {
+        karas.inject.IMG[src] = {
+          width: tex.width,
+          height: tex.height,
+          state: karas.inject.LOADED,
+          source: img,
+          url: src,
+        };
+        tex.SubTexture.forEach(item => {
+          let { name } = item;
+          texHash[name].source = img;
+        });
+      };
+      img.onerror = function() {
+        throw new Error('Can not find tex: ' + src);
+      };
+      img.src = src;
+    }
   }
 
   render() {

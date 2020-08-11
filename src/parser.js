@@ -2,8 +2,8 @@ import karas from 'karas';
 
 const { inject, math } = karas;
 
-function parseAndLoadTex(tex, cb) {
-  let src = tex.imagePath;
+function parseAndLoadTex(tex, cb, path) {
+  let src = path || tex.imagePath;
   let img = document.createElement('img');
   let texHash = {};
   img.onload = function() {
