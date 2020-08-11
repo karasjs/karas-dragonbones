@@ -73,7 +73,7 @@ function animateBoneMatrix(animationList, offset, boneHash) {
       let m = [res.scaleX === undefined ? 1 : res.scaleX, 0, 0, res.scaleY === undefined ? 1 : res.scaleY, 0, 0];
       matrix = math.matrix.multiply(matrix, m);
     }
-    bone.matrix = matrix;
+    bone.matrixA = matrix;
   });
 }
 
@@ -113,14 +113,14 @@ function binarySearch(i, j, offset, frames) {
  * @param root 根骨骼
  */
 function mergeBoneMatrix(root) {
-  root.currentMatrix = root.matrix;
+  root.currentMatrix = root.matrixA || root.matrix;
   root.children.forEach(item => {
     mergeChildBoneMatrix(item, root.currentMatrix);
   });
 }
 
 function mergeChildBoneMatrix(bone, parentMatrix) {
-  bone.currentMatrix = math.matrix.multiply(parentMatrix, bone.matrix);
+  bone.currentMatrix = math.matrix.multiply(parentMatrix, bone.matrixA || bone.matrix);
   bone.children.forEach(item => {
     mergeChildBoneMatrix(item, bone.currentMatrix);
   });
@@ -131,16 +131,15 @@ function mergeChildBoneMatrix(bone, parentMatrix) {
  * @param slotAnimationList
  * @param offset
  * @param slotHash
- * @param ffdAnimationHash
  */
-function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
+function animateSlot(slotAnimationList, offset, slotHash) {
   slotAnimationList.forEach(item => {
     let { name, displayFrame, colorFrame } = item;
     let slot = slotHash[name];
     if(displayFrame) {
       let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
       let { value = 0 } = displayFrame[i];
-      slot.displayIndex = value;
+      slot.displayIndexA = value;
     }
     if(colorFrame) {
       let len = colorFrame.length;
@@ -148,13 +147,13 @@ function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
       let current = colorFrame[i];
       // 是否最后一帧
       if(i === len - 1) {
-        slot.color = current.value;
+        slot.colorA = current.value;
       }
       else {
         let next = colorFrame[i + 1];
         let total = next.offset - current.offset;
         let percent = (offset - current.offset) / total;
-        slot.color = {
+        slot.colorA = {
           aM: current.value.aM + current.da * percent,
         };
       }
@@ -174,13 +173,13 @@ function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
  */
 function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash) {
   slot.forEach(item => {
-    let { name, parent, displayIndex = 0 } = item;
+    let { name, parent, displayIndex = 0, displayIndexA = displayIndex } = item;
     // 插槽隐藏不显示
-    if(displayIndex < 0) {
+    if(displayIndexA < 0) {
       return;
     }
     let skin = skinHash[name];
-    let displayTarget = skin.display[displayIndex];
+    let displayTarget = skin.display[displayIndexA];
     // 网格类型
     if(displayTarget.type === 'mesh') {
       let { verticesList, triangleList } = displayTarget;
@@ -323,9 +322,20 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
   });
 }
 
+function clearAnimation(bone, slot) {
+  bone.forEach(item => {
+    delete item.matrixA;
+  });
+  slot.forEach(item => {
+    delete item.displayIndexA;
+    delete item.colorA;
+  });
+}
+
 export default {
   animateBoneMatrix,
   mergeBoneMatrix,
   animateSlot,
   calSlot,
+  clearAnimation,
 };

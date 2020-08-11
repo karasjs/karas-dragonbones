@@ -2,39 +2,40 @@ import karas from 'karas';
 
 const { math } = karas;
 
-function canvasBone(ctx, sx, sy, matrixEvent, bone) {
+function canvasBone(ctx, matrixEvent, bone) {
   let { length, children, currentMatrix } = bone;
   let m = math.matrix.multiply(matrixEvent, currentMatrix);
   ctx.setTransform(...m);
   ctx.beginPath();
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 1;
-  ctx.arc(sx, sy, 5, 0, Math.PI * 2);
-  ctx.moveTo(sx, sy);
-  ctx.lineTo(length || 5, sy);
+  ctx.arc(0, 0, 5, 0, Math.PI * 2);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(length || 5, 0);
   ctx.closePath();
   ctx.stroke();
   children.forEach(item => {
-    canvasBone(ctx, sx, sy, matrixEvent, item);
+    canvasBone(ctx, matrixEvent, item);
   });
 }
 
 function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
   let opacity = ctx.globalAlpha;
   slot.forEach(item => {
-    let { name, displayIndex = 0, blendMode, color: { aM = 100 } = {} } = item;
+    let { name, displayIndex = 0, displayIndexA = displayIndex, blendMode, color = {}, colorA = color } = item;
     // 插槽隐藏不显示
-    if(displayIndex < 0) {
+    if(displayIndexA < 0) {
       return;
     }
     // 叠加模式
     if(blendMode === 'add') {
       ctx.globalCompositeOperation = 'lighter';
     }
+    let { aM = 100 } = colorA;
     // 透明度
     ctx.globalAlpha *= aM / 100;
     let skin = skinHash[name];
-    let displayTarget = skin.display[displayIndex];
+    let displayTarget = skin.display[displayIndexA];
     let tex = texHash[displayTarget.name];
     // 网格类型
     if(displayTarget.type === 'mesh') {
@@ -50,10 +51,10 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.save();
         ctx.setTransform(...matrix);
         ctx.beginPath();
-        ctx.closePath();
         ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
         ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
         ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+        ctx.closePath();
         ctx.clip();
         ctx.drawImage(tex.source, -tex.x, -tex.y);
         ctx.restore();
@@ -71,9 +72,9 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.setTransform(...matrix);
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(tex.frameWidth, 0);
-      ctx.lineTo(tex.frameWidth, tex.frameHeight);
-      ctx.lineTo(0, tex.frameHeight);
+      ctx.lineTo(tex.width, 0);
+      ctx.lineTo(tex.width, tex.height);
+      ctx.lineTo(0, tex.height);
       ctx.closePath();
       ctx.clip();
       ctx.drawImage(tex.source, -tex.x, -tex.y);
@@ -90,13 +91,13 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
 
 function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
   slot.forEach(item => {
-    let { name, displayIndex = 0 } = item;
+    let { name, displayIndex = 0, displayIndexA = displayIndex } = item;
     // 插槽隐藏不显示
-    if(displayIndex < 0) {
+    if(displayIndexA < 0) {
       return;
     }
     let skin = skinHash[name];
-    let displayTarget = skin.display[displayIndex];
+    let displayTarget = skin.display[displayIndexA];
     // 网格类型
     if(displayTarget.type === 'mesh') {
       let { verticesList, triangleList } = displayTarget;
@@ -119,7 +120,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.setTransform(...matrix);
         ctx.fillStyle = '#0D6';
         ctx.beginPath();
-        ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
       });
@@ -134,10 +135,10 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.strokeStyle = '#F90';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(tex.frameWidth, sy);
-      ctx.lineTo(tex.frameWidth, tex.frameHeight);
-      ctx.lineTo(sx, tex.frameHeight)
+      ctx.moveTo(0, 0);
+      ctx.lineTo(tex.width, 0);
+      ctx.lineTo(tex.width, tex.height);
+      ctx.lineTo(0, tex.height)
       ctx.closePath();
       ctx.stroke();
       ctx.restore();

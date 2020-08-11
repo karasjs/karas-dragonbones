@@ -28,6 +28,21 @@
     return Constructor;
   }
 
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
   function _inherits(subClass, superClass) {
     if (typeof superClass !== "function" && superClass !== null) {
       throw new TypeError("Super expression must either be null or a function");
@@ -885,7 +900,7 @@
         matrix = math$1.matrix.multiply(matrix, _m2);
       }
 
-      bone.matrix = matrix;
+      bone.matrixA = matrix;
     });
   }
   /**
@@ -927,14 +942,14 @@
 
 
   function mergeBoneMatrix(root) {
-    root.currentMatrix = root.matrix;
+    root.currentMatrix = root.matrixA || root.matrix;
     root.children.forEach(function (item) {
       mergeChildBoneMatrix(item, root.currentMatrix);
     });
   }
 
   function mergeChildBoneMatrix(bone, parentMatrix) {
-    bone.currentMatrix = math$1.matrix.multiply(parentMatrix, bone.matrix);
+    bone.currentMatrix = math$1.matrix.multiply(parentMatrix, bone.matrixA || bone.matrix);
     bone.children.forEach(function (item) {
       mergeChildBoneMatrix(item, bone.currentMatrix);
     });
@@ -944,11 +959,10 @@
    * @param slotAnimationList
    * @param offset
    * @param slotHash
-   * @param ffdAnimationHash
    */
 
 
-  function animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash) {
+  function animateSlot(slotAnimationList, offset, slotHash) {
     slotAnimationList.forEach(function (item) {
       var name = item.name,
           displayFrame = item.displayFrame,
@@ -959,7 +973,7 @@
         var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
         var _displayFrame$i$value = displayFrame[i].value,
             value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
-        slot.displayIndex = value;
+        slot.displayIndexA = value;
       }
 
       if (colorFrame) {
@@ -970,12 +984,12 @@
         var current = colorFrame[_i]; // 是否最后一帧
 
         if (_i === len - 1) {
-          slot.color = current.value;
+          slot.colorA = current.value;
         } else {
           var next = colorFrame[_i + 1];
           var total = next.offset - current.offset;
           var percent = (offset - current.offset) / total;
-          slot.color = {
+          slot.colorA = {
             aM: current.value.aM + current.da * percent
           };
         }
@@ -999,14 +1013,16 @@
       var name = item.name,
           parent = item.parent,
           _item$displayIndex = item.displayIndex,
-          displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex; // 插槽隐藏不显示
+          displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
+          _item$displayIndexA = item.displayIndexA,
+          displayIndexA = _item$displayIndexA === void 0 ? displayIndex : _item$displayIndexA; // 插槽隐藏不显示
 
-      if (displayIndex < 0) {
+      if (displayIndexA < 0) {
         return;
       }
 
       var skin = skinHash[name];
-      var displayTarget = skin.display[displayIndex]; // 网格类型
+      var displayTarget = skin.display[displayIndexA]; // 网格类型
 
       if (displayTarget.type === 'mesh') {
         var verticesList = displayTarget.verticesList,
@@ -1171,16 +1187,27 @@
     });
   }
 
+  function clearAnimation(bone, slot) {
+    bone.forEach(function (item) {
+      delete item.matrixA;
+    });
+    slot.forEach(function (item) {
+      delete item.displayIndexA;
+      delete item.colorA;
+    });
+  }
+
   var util = {
     animateBoneMatrix: animateBoneMatrix,
     mergeBoneMatrix: mergeBoneMatrix,
     animateSlot: animateSlot,
-    calSlot: calSlot
+    calSlot: calSlot,
+    clearAnimation: clearAnimation
   };
 
   var math$2 = karas.math;
 
-  function canvasBone(ctx, sx, sy, matrixEvent, bone) {
+  function canvasBone(ctx, matrixEvent, bone) {
     var length = bone.length,
         children = bone.children,
         currentMatrix = bone.currentMatrix;
@@ -1189,13 +1216,13 @@
     ctx.beginPath();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
-    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(length || 5, sy);
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(length || 5, 0);
     ctx.closePath();
     ctx.stroke();
     children.forEach(function (item) {
-      canvasBone(ctx, sx, sy, matrixEvent, item);
+      canvasBone(ctx, matrixEvent, item);
     });
   }
 
@@ -1205,25 +1232,29 @@
       var name = item.name,
           _item$displayIndex = item.displayIndex,
           displayIndex = _item$displayIndex === void 0 ? 0 : _item$displayIndex,
+          _item$displayIndexA = item.displayIndexA,
+          displayIndexA = _item$displayIndexA === void 0 ? displayIndex : _item$displayIndexA,
           blendMode = item.blendMode,
-          _item$color = item.color;
-      _item$color = _item$color === void 0 ? {} : _item$color;
-      var _item$color$aM = _item$color.aM,
-          aM = _item$color$aM === void 0 ? 100 : _item$color$aM; // 插槽隐藏不显示
+          _item$color = item.color,
+          color = _item$color === void 0 ? {} : _item$color,
+          _item$colorA = item.colorA,
+          colorA = _item$colorA === void 0 ? color : _item$colorA; // 插槽隐藏不显示
 
-      if (displayIndex < 0) {
+      if (displayIndexA < 0) {
         return;
       } // 叠加模式
 
 
       if (blendMode === 'add') {
         ctx.globalCompositeOperation = 'lighter';
-      } // 透明度
+      }
 
+      var _colorA$aM = colorA.aM,
+          aM = _colorA$aM === void 0 ? 100 : _colorA$aM; // 透明度
 
       ctx.globalAlpha *= aM / 100;
       var skin = skinHash[name];
-      var displayTarget = skin.display[displayIndex];
+      var displayTarget = skin.display[displayIndexA];
       var tex = texHash[displayTarget.name]; // 网格类型
 
       if (displayTarget.type === 'mesh') {
@@ -1241,10 +1272,10 @@
           ctx.save();
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.beginPath();
-          ctx.closePath();
           ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
           ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
           ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+          ctx.closePath();
           ctx.clip();
           ctx.drawImage(tex.source, -tex.x, -tex.y);
           ctx.restore();
@@ -1263,9 +1294,9 @@
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(tex.frameWidth, 0);
-          ctx.lineTo(tex.frameWidth, tex.frameHeight);
-          ctx.lineTo(0, tex.frameHeight);
+          ctx.lineTo(tex.width, 0);
+          ctx.lineTo(tex.width, tex.height);
+          ctx.lineTo(0, tex.height);
           ctx.closePath();
           ctx.clip();
           ctx.drawImage(tex.source, -tex.x, -tex.y);
@@ -1285,14 +1316,16 @@
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex2 = item.displayIndex,
-          displayIndex = _item$displayIndex2 === void 0 ? 0 : _item$displayIndex2; // 插槽隐藏不显示
+          displayIndex = _item$displayIndex2 === void 0 ? 0 : _item$displayIndex2,
+          _item$displayIndexA2 = item.displayIndexA,
+          displayIndexA = _item$displayIndexA2 === void 0 ? displayIndex : _item$displayIndexA2; // 插槽隐藏不显示
 
-      if (displayIndex < 0) {
+      if (displayIndexA < 0) {
         return;
       }
 
       var skin = skinHash[name];
-      var displayTarget = skin.display[displayIndex]; // 网格类型
+      var displayTarget = skin.display[displayIndexA]; // 网格类型
 
       if (displayTarget.type === 'mesh') {
         var verticesList = displayTarget.verticesList,
@@ -1317,7 +1350,7 @@
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.fillStyle = '#0D6';
           ctx.beginPath();
-          ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+          ctx.arc(0, 0, 4, 0, Math.PI * 2);
           ctx.closePath();
           ctx.fill();
         });
@@ -1331,10 +1364,10 @@
           ctx.strokeStyle = '#F90';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(sx, sy);
-          ctx.lineTo(tex.frameWidth, sy);
-          ctx.lineTo(tex.frameWidth, tex.frameHeight);
-          ctx.lineTo(sx, tex.frameHeight);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(tex.width, 0);
+          ctx.lineTo(tex.width, tex.height);
+          ctx.lineTo(0, tex.height);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -1364,13 +1397,13 @@
       value: function componentDidMount() {
         var _this = this;
 
-        var self = this; // 劫持本隐藏节点的render()，在每次渲染时绘制骨骼动画
+        var props = this.props;
+        var ske = props.ske,
+            tex = props.tex;
 
-        var shadowRoot = this.shadowRoot;
-        var fake = this.ref.fake;
-        var _this$props = this.props,
-            ske = _this$props.ske,
-            tex = _this$props.tex;
+        if (ske.version !== '5.5') {
+          throw new Error('The version' + ske.version + ' does not match 5.5');
+        }
 
         if (ske && tex && karas.util.isObject(ske) && karas.util.isObject(tex)) {
           parser.parseAndLoadTex(tex, function (texHash) {
@@ -1385,61 +1418,104 @@
                 defaultActions = _parser$parseSke.defaultActions,
                 canvas = _parser$parseSke.canvas;
 
-            if (defaultActions && defaultActions.length) {
-              var animation = animationHash[defaultActions[0].gotoAndPlay];
-              var boneAnimationList = animation.boneAnimationList,
-                  slotAnimationList = animation.slotAnimationList,
-                  ffdAnimationHash = animation.ffdAnimationHash,
-                  options = animation.options;
+            _this.texHash = texHash;
+            _this.bone = bone;
+            _this.boneHash = boneHash;
+            _this.slot = slot;
+            _this.slotHash = slotHash;
+            _this.skin = skin;
+            _this.skinHash = skinHash;
+            _this.animationHash = animationHash;
+            var defaultAction; // 优先props指定，有可能不存在
 
-              if (!karas.util.isNil(self.props.playbackRate)) {
-                options.playbackRate = self.props.playbackRate;
+            if (props.defaultAction && animationHash[props.defaultAction]) {
+              var key = props.defaultPause ? 'gotoAndStop' : 'gotoAndPlay';
+              defaultAction = _defineProperty({}, key, props.defaultAction);
+            } // 不存在或没有指定使用ske文件的第一个
+            else if (defaultActions && defaultActions.length) {
+                defaultAction = defaultActions[0];
               }
 
-              if (!karas.util.isNil(self.props.fps)) {
-                options.fps = self.props.fps;
-              } // 隐藏节点模拟一段不展示的动画，带动每次渲染
+            if (defaultAction) {
+              var a = _this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
 
-
-              var a = _this.animation = fake.animate([{
-                opacity: 0
-              }, {
-                opacity: 1
-              }], options); // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
-
-              fake.render = function (renderMode, ctx, defs) {
-                var offset = Math.min(1, a.currentTime / a.duration);
-                util.animateBoneMatrix(boneAnimationList, offset, boneHash);
-                util.mergeBoneMatrix(bone[0]);
-                util.animateSlot(slotAnimationList, offset, slotHash, ffdAnimationHash);
-                util.calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash);
-
-                if (renderMode === karas.mode.CANVAS) {
-                  var matrixEvent = shadowRoot.matrixEvent,
-                      computedStyle = shadowRoot.computedStyle; // 先在dom中居中
-
-                  var left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
-                  var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
-                  var t = karas.math.matrix.identity();
-                  t[4] = left;
-                  t[5] = top;
-                  matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
-                  render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash); // debug模式
-
-                  if (self.props.debug) {
-                    render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
-                    render.canvasBone(ctx, matrixEvent, bone[0]);
-                  } else {
-                    if (self.props.debugBone) {
-                      render.canvasBone(ctx, matrixEvent, bone[0]);
-                    }
-                  }
-                } // a.pause();
-
-              };
+              if (defaultAction.gotoAndStop) {
+                a.gotoAndStop(0);
+              }
             }
           });
         }
+      }
+    }, {
+      key: "action",
+      value: function action(name) {
+        var animation = this.animationHash[name];
+
+        if (!animation) {
+          throw new Error('Can not find animation: ' + name);
+        } // 清除上次动画的影响
+
+
+        if (this.animation) {
+          util.clearAnimation(this.bone, this.slot);
+        }
+
+        var boneAnimationList = animation.boneAnimationList,
+            slotAnimationList = animation.slotAnimationList,
+            ffdAnimationHash = animation.ffdAnimationHash,
+            options = animation.options;
+
+        if (!karas.util.isNil(this.props.playbackRate)) {
+          options.playbackRate = this.props.playbackRate;
+        }
+
+        if (!karas.util.isNil(this.props.fps)) {
+          options.fps = this.props.fps;
+        } // 隐藏节点模拟一段不展示的动画，带动每次渲染
+
+
+        var fake = this.ref.fake;
+        fake.clearAnimate();
+        var a = this.animation = fake.animate([{
+          opacity: 0
+        }, {
+          opacity: 1
+        }], options); // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
+
+        var self = this;
+
+        fake.render = function (renderMode, ctx, defs) {
+          var offset = Math.min(1, a.currentTime / a.duration);
+          util.animateBoneMatrix(boneAnimationList, offset, self.boneHash);
+          util.mergeBoneMatrix(self.bone[0]);
+          util.animateSlot(slotAnimationList, offset, self.slotHash);
+          util.calSlot(offset, self.slot, self.skinHash, self.bone, self.boneHash, self.texHash, ffdAnimationHash);
+
+          if (renderMode === karas.mode.CANVAS) {
+            var _self$shadowRoot = self.shadowRoot,
+                matrixEvent = _self$shadowRoot.matrixEvent,
+                computedStyle = _self$shadowRoot.computedStyle; // 先在dom中居中
+
+            var left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
+            var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
+            var t = karas.math.matrix.identity();
+            t[4] = left;
+            t[5] = top;
+            matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
+            render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash); // debug模式
+
+            if (self.props.debug) {
+              render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+              render.canvasBone(ctx, matrixEvent, self.bone[0]);
+            } else {
+              if (self.props.debugBone) {
+                render.canvasBone(ctx, matrixEvent, self.bone[0]);
+              }
+            }
+          }
+        };
+
+        return a;
       }
     }, {
       key: "render",
