@@ -31,12 +31,12 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.globalCompositeOperation = 'lighter';
     }
     let { aM = 100 } = colorA;
-    let op = ctx.globalAlpha;
+    let opacity = ctx.globalAlpha;
     // 透明度
     ctx.globalAlpha *= aM / 100;
     let skin = skinHash[name];
     let displayTarget = skin.display[displayIndexA];
-    let tex = texHash[displayTarget.name];
+    let tex = texHash[displayTarget.path || displayTarget.name];
     // 网格类型
     if(displayTarget.type === 'mesh') {
       let { triangleList } = displayTarget;
@@ -84,7 +84,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
     if(blendMode) {
       ctx.globalCompositeOperation = 'source-over';
     }
-    ctx.globalAlpha = op;
+    ctx.globalAlpha = opacity;
   });
 }
 
@@ -97,6 +97,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
     }
     let skin = skinHash[name];
     let displayTarget = skin.display[displayIndexA];
+    let tex = texHash[displayTarget.path || displayTarget.name];
     // 网格类型
     if(displayTarget.type === 'mesh') {
       let { verticesList, triangleList } = displayTarget;
@@ -127,7 +128,6 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
     // 默认图片类型
     else {
       let { matrix } = displayTarget;
-      let tex = texHash[displayTarget.name];
       matrix = math.matrix.multiply(matrixEvent, matrix);
       ctx.save();
       ctx.setTransform(...matrix);

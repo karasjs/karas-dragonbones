@@ -279,14 +279,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         });
         // 先交换确保3个点顺序
         let [source1, target1] = math.tar.exchangeOrder(source, target);
-        let matrix;
-        // 防止溢出，此时三角形不可见
-        if(math.tar.isOverflow(source1, target1)) {
-          matrix = [0, 0, 0, 0, 0, 0];
-        }
-        else {
-          matrix = math.tar.transform(source1, target1);
-        }
+        let matrix = math.tar.transform(source1, target1);
         item.matrix = matrix;
       });
     }

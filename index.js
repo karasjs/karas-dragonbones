@@ -226,6 +226,7 @@
             _item$frameHeight = item.frameHeight,
             frameHeight = _item$frameHeight === void 0 ? height : _item$frameHeight;
         texHash[name] = {
+          name: name,
           x: x,
           y: y,
           width: width,
@@ -336,7 +337,8 @@
       hash[name] = item;
       display.forEach(function (item) {
         var type = item.type,
-            name = item.name; // mesh网格分析三角形
+            name = item.name,
+            path = item.path; // mesh网格分析三角形
 
         if (type === 'mesh') {
           (function () {
@@ -449,7 +451,7 @@
             } // 三角形，切割图片坐标
 
 
-            var tex = texHash[name];
+            var tex = texHash[path || name];
             var width = tex.width,
                 height = tex.height;
             var triangleList = item.triangleList = [];
@@ -1143,14 +1145,7 @@
               source1 = _math$tar$exchangeOrd2[0],
               target1 = _math$tar$exchangeOrd2[1];
 
-          var matrix; // 防止溢出，此时三角形不可见
-
-          if (math$1.tar.isOverflow(source1, target1)) {
-            matrix = [0, 0, 0, 0, 0, 0];
-          } else {
-            matrix = math$1.tar.transform(source1, target1);
-          }
-
+          var matrix = math$1.tar.transform(source1, target1);
           item.matrix = matrix;
         });
       } // 默认图片类型
@@ -1256,12 +1251,12 @@
 
       var _colorA$aM = colorA.aM,
           aM = _colorA$aM === void 0 ? 100 : _colorA$aM;
-      var op = ctx.globalAlpha; // 透明度
+      var opacity = ctx.globalAlpha; // 透明度
 
       ctx.globalAlpha *= aM / 100;
       var skin = skinHash[name];
       var displayTarget = skin.display[displayIndexA];
-      var tex = texHash[displayTarget.name]; // 网格类型
+      var tex = texHash[displayTarget.path || displayTarget.name]; // 网格类型
 
       if (displayTarget.type === 'mesh') {
         var triangleList = displayTarget.triangleList;
@@ -1314,7 +1309,7 @@
         ctx.globalCompositeOperation = 'source-over';
       }
 
-      ctx.globalAlpha = op;
+      ctx.globalAlpha = opacity;
     });
   }
 
@@ -1331,7 +1326,8 @@
       }
 
       var skin = skinHash[name];
-      var displayTarget = skin.display[displayIndexA]; // 网格类型
+      var displayTarget = skin.display[displayIndexA];
+      var tex = texHash[displayTarget.path || displayTarget.name]; // 网格类型
 
       if (displayTarget.type === 'mesh') {
         var verticesList = displayTarget.verticesList,
@@ -1363,7 +1359,6 @@
       } // 默认图片类型
       else {
           var matrix = displayTarget.matrix;
-          var tex = texHash[displayTarget.name];
           matrix = math$2.matrix.multiply(matrixEvent, matrix);
           ctx.save();
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
@@ -1454,7 +1449,7 @@
             if (defaultAction) {
               var a = _this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
 
-              if (defaultAction.gotoAndStop) {
+              if (props.defaultPause || defaultAction.gotoAndStop) {
                 a.gotoAndStop(0);
               }
             }
@@ -1515,7 +1510,15 @@
             var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
             var t = karas.math.matrix.identity();
             t[4] = left;
-            t[5] = top;
+            t[5] = top; // 适配尺寸
+
+            if (self.canvas && self.props.fitSize) {
+              var sx = computedStyle.width / self.canvas.width;
+              var sy = computedStyle.height / self.canvas.height;
+              t[0] = sx;
+              t[3] = sy;
+            }
+
             matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
             render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash); // debug模式
 

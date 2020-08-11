@@ -47,7 +47,7 @@ class Dragonbones extends karas.Component {
         }
         if(defaultAction) {
           let a = this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
-          if(defaultAction.gotoAndStop) {
+          if(props.defaultPause || defaultAction.gotoAndStop) {
             a.gotoAndStop(0);
           }
         }
@@ -98,6 +98,13 @@ class Dragonbones extends karas.Component {
         let t = karas.math.matrix.identity();
         t[4] = left;
         t[5] = top;
+        // 适配尺寸
+        if(self.canvas && self.props.fitSize) {
+          let sx = computedStyle.width / self.canvas.width;
+          let sy = computedStyle.height / self.canvas.height;
+          t[0] = sx;
+          t[3] = sy;
+        }
         matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
         render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
         // debug模式

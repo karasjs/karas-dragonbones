@@ -18,6 +18,7 @@ function parseAndLoadTex(tex, cb, path) {
     tex.SubTexture.forEach(item => {
       let { name, x, y, width, height, frameX = 0, frameY = 0, frameWidth = width, frameHeight = height } = item;
       texHash[name] = {
+        name,
         x,
         y,
         width,
@@ -118,7 +119,7 @@ function parseSkin(data, texHash) {
     let { name, display } = item;
     hash[name] = item;
     display.forEach(item => {
-      let { type, name } = item;
+      let { type, name, path } = item;
       // mesh网格分析三角形
       if(type === 'mesh') {
         let { vertices, triangles, uvs, weights, bonePose } = item;
@@ -205,7 +206,7 @@ function parseSkin(data, texHash) {
           }
         }
         // 三角形，切割图片坐标
-        let tex = texHash[name];
+        let tex = texHash[path || name];
         let { width, height } = tex;
         let triangleList = item.triangleList = [];
         for(let i = 0, len = triangles.length; i < len; i += 3) {
