@@ -72,7 +72,7 @@ function parseSke(ske, texHash, props = {}) {
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
   let skinHash = parseSkin(skin, texHash, props);
-  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash, skinHash);
+  let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
   return {
     bone,
     boneHash,
@@ -357,7 +357,7 @@ function triangleOriginCoords(x1, y1, x2, y2, x3, y3) {
   return [xMin, yMin, xMax - xMin, yMax - yMin];
 }
 
-function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
+function parseAnimation(data, frameRate, boneHash) {
   let hash = {};
   data.forEach(item => {
     let { duration, playTimes, name, bone = [], slot = [], ffd = [] } = item;

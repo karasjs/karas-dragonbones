@@ -57,6 +57,7 @@ class Dragonbones extends karas.Component {
       if(options.pause || defaultAction.gotoAndStop) {
         a.gotoAndStop(0);
       }
+      return a;
     }
     else {
       console.warn('No action data');

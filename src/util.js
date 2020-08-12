@@ -254,11 +254,18 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
             }
             let { vertices, dv } = current;
             if(vertices || dv) {
-              for(let i = 0, len = (vertices || dv).length; i < len - 1; i += 2) {
+              let len = 0;
+              if(vertices) {
+                len = vertices.length;
+              }
+              if(dv) {
+                len = Math.max(len, dv.length);
+              }
+              for(let i = 0; i < len - 1; i += 2) {
                 let x, y;
                 if(vertices) {
-                  x = vertices[i];
-                  y = vertices[i + 1];
+                  x = vertices[i] || 0;
+                  y = vertices[i + 1] || 0;
                 }
                 else {
                   x = y = 0;

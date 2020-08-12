@@ -602,7 +602,7 @@
     return (d + px) / d;
   }
 
-  function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
+  function parseAnimation(data, frameRate, boneHash) {
     var hash = {};
     data.forEach(function (item) {
       var duration = item.duration,
@@ -1138,13 +1138,23 @@
                   dv = current.dv;
 
               if (_vertices || dv) {
-                for (var _i3 = 0, _len2 = (_vertices || dv).length; _i3 < _len2 - 1; _i3 += 2) {
+                var _len2 = 0;
+
+                if (_vertices) {
+                  _len2 = _vertices.length;
+                }
+
+                if (dv) {
+                  _len2 = Math.max(_len2, dv.length);
+                }
+
+                for (var _i3 = 0; _i3 < _len2 - 1; _i3 += 2) {
                   var _x = void 0,
                       _y = void 0;
 
                   if (_vertices) {
-                    _x = _vertices[_i3];
-                    _y = _vertices[_i3 + 1];
+                    _x = _vertices[_i3] || 0;
+                    _y = _vertices[_i3 + 1] || 0;
                   } else {
                     _x = _y = 0;
                   }
@@ -1303,12 +1313,7 @@
         var triangleList = displayTarget.triangleList;
         triangleList.forEach(function (item) {
           var matrix = item.matrix,
-              scaleCoords = item.scaleCoords; // 可能缩放至0或变形为一条线无宽度不可见
-
-          if (matrix[0] === 0 || matrix[3] === 0) {
-            return;
-          }
-
+              scaleCoords = item.scaleCoords;
           matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
 
           ctx.save();
@@ -1388,8 +1393,9 @@
           ctx.stroke();
         });
         verticesList.forEach(function (item) {
-          var matrix = item.matrix;
-          matrix = math$2.matrix.multiply(matrixEvent, matrix);
+          var matrix = item.matrix,
+              matrixF = item.matrixF;
+          matrix = math$2.matrix.multiply(matrixEvent, matrixF || matrix);
           ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
           ctx.fillStyle = '#0D6';
           ctx.beginPath();
@@ -1505,6 +1511,8 @@
           if (options.pause || defaultAction.gotoAndStop) {
             a.gotoAndStop(0);
           }
+
+          return a;
         } else {
           console.warn('No action data');
         }

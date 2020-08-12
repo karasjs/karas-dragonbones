@@ -42,10 +42,6 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       let { triangleList } = displayTarget;
       triangleList.forEach(item => {
         let { matrix, scaleCoords } = item;
-        // 可能缩放至0或变形为一条线无宽度不可见
-        if(matrix[0] === 0 || matrix[3] === 0) {
-          return;
-        }
         matrix = math.matrix.multiply(matrixEvent, matrix);
         // clip绘制
         ctx.save();
@@ -115,8 +111,8 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.stroke();
       });
       verticesList.forEach(item => {
-        let { matrix } = item;
-        matrix = math.matrix.multiply(matrixEvent, matrix);
+        let { matrix, matrixF } = item;
+        matrix = math.matrix.multiply(matrixEvent, matrixF || matrix);
         ctx.setTransform(...matrix);
         ctx.fillStyle = '#0D6';
         ctx.beginPath();
