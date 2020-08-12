@@ -197,7 +197,8 @@
   var inject = karas.inject,
       math = karas.math;
 
-  function parseAndLoadTex(tex, cb, props) {
+  function parseAndLoadTex(tex, cb) {
+    var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var src = props.imagePath || tex.imagePath;
     var img = document.createElement('img');
     var texHash = {};
@@ -248,17 +249,40 @@
     img.src = src;
   }
 
-  function parseSke(ske, texHash, props) {
+  function parseSke(ske, texHash) {
+    var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var globalFrameRate = ske.frameRate,
         armature = ske.armature;
-    var _armature$ = armature[0],
-        bone = _armature$.bone,
-        slot = _armature$.slot,
-        skin = _armature$.skin,
-        frameRate = _armature$.frameRate,
-        animation = _armature$.animation,
-        defaultActions = _armature$.defaultActions,
-        canvas = _armature$.canvas;
+    var currentArmature = armature[0];
+
+    if (props.armature) {
+      for (var i = 0, len = armature.length; i < len; i++) {
+        var item = armature[i];
+
+        if (item.name === props.armature) {
+          currentArmature = item;
+          break;
+        }
+      }
+
+      if (!currentArmature) {
+        throw new Error('Can not find armature: ' + props.armature);
+      }
+    }
+
+    if (!currentArmature) {
+      console.warn('No armature data');
+      return;
+    }
+
+    var _currentArmature = currentArmature,
+        bone = _currentArmature.bone,
+        slot = _currentArmature.slot,
+        skin = _currentArmature.skin,
+        frameRate = _currentArmature.frameRate,
+        animation = _currentArmature.animation,
+        defaultActions = _currentArmature.defaultActions,
+        canvas = _currentArmature.canvas;
     var boneHash = parseBone(bone);
     var slotHash = parseSlot(slot);
     var skinHash = parseSkin(skin, texHash, props);
@@ -1431,46 +1455,58 @@
           throw new Error('The version' + ske.version + ' does not match 5.5');
         }
 
-        if (ske && tex && karas.util.isObject(ske) && karas.util.isObject(tex)) {
-          parser.parseAndLoadTex(tex, function (texHash) {
-            var _parser$parseSke = parser.parseSke(ske, texHash, props),
-                bone = _parser$parseSke.bone,
-                boneHash = _parser$parseSke.boneHash,
-                slot = _parser$parseSke.slot,
-                slotHash = _parser$parseSke.slotHash,
-                skin = _parser$parseSke.skin,
-                skinHash = _parser$parseSke.skinHash,
-                animationHash = _parser$parseSke.animationHash,
-                defaultActions = _parser$parseSke.defaultActions,
-                canvas = _parser$parseSke.canvas;
+        this.ske = ske;
+        this.tex = tex;
+        parser.parseAndLoadTex(tex, function (texHash) {
+          _this.texHash = texHash;
 
-            _this.texHash = texHash;
-            _this.bone = bone;
-            _this.boneHash = boneHash;
-            _this.slot = slot;
-            _this.slotHash = slotHash;
-            _this.skin = skin;
-            _this.skinHash = skinHash;
-            _this.animationHash = animationHash;
-            _this.canvas = canvas;
-            var defaultAction; // 优先props指定，有可能不存在
+          _this.armature(props.armature, props);
+        }, props);
+      }
+    }, {
+      key: "armature",
+      value: function armature(name) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var op = karas.util.extend({}, options);
+        op.armature = name;
 
-            if (props.defaultAction && animationHash[props.defaultAction]) {
-              var key = props.defaultPause ? 'gotoAndStop' : 'gotoAndPlay';
-              defaultAction = _defineProperty({}, key, props.defaultAction);
-            } // 不存在或没有指定使用ske文件的第一个
-            else if (defaultActions && defaultActions.length) {
-                defaultAction = defaultActions[0];
-              }
+        var _parser$parseSke = parser.parseSke(this.ske, this.texHash, op),
+            bone = _parser$parseSke.bone,
+            boneHash = _parser$parseSke.boneHash,
+            slot = _parser$parseSke.slot,
+            slotHash = _parser$parseSke.slotHash,
+            skin = _parser$parseSke.skin,
+            skinHash = _parser$parseSke.skinHash,
+            animationHash = _parser$parseSke.animationHash,
+            defaultActions = _parser$parseSke.defaultActions,
+            canvas = _parser$parseSke.canvas;
 
-            if (defaultAction) {
-              var a = _this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
+        this.bone = bone;
+        this.boneHash = boneHash;
+        this.slot = slot;
+        this.slotHash = slotHash;
+        this.skin = skin;
+        this.skinHash = skinHash;
+        this.animationHash = animationHash;
+        this.canvas = canvas;
+        var defaultAction;
 
-              if (props.defaultPause || defaultAction.gotoAndStop) {
-                a.gotoAndStop(0);
-              }
-            }
-          }, props);
+        if (options.action && animationHash[options.action]) {
+          var key = options.pause ? 'gotoAndStop' : 'gotoAndPlay';
+          defaultAction = _defineProperty({}, key, options.action);
+        } // 不存在或没有指定使用ske文件的第一个
+        else if (defaultActions && defaultActions.length) {
+            defaultAction = defaultActions[0];
+          }
+
+        if (defaultAction) {
+          var a = this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
+
+          if (options.pause || defaultAction.gotoAndStop) {
+            a.gotoAndStop(0);
+          }
+        } else {
+          console.warn('No action data');
         }
       }
     }, {
@@ -1567,7 +1603,8 @@
       key: "changeImage",
       value: function changeImage(src) {
         if (src) {
-          var tex = this.props.tex;
+          var tex = this.tex;
+          tex.imagePath = src;
           var texHash = this.texHash;
           var img = document.createElement('img');
 

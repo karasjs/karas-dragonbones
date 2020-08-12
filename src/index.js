@@ -10,48 +10,56 @@ class Dragonbones extends karas.Component {
     if(ske.version !== '5.5') {
       throw new Error('The version' + ske.version + ' does not match 5.5');
     }
-    if(ske && tex && karas.util.isObject(ske) && karas.util.isObject(tex)) {
-      parser.parseAndLoadTex(tex, (texHash) => {
-        let {
-          bone,
-          boneHash,
-          slot,
-          slotHash,
-          skin,
-          skinHash,
-          animationHash,
-          defaultActions,
-          canvas,
-        } = parser.parseSke(ske, texHash, props);
-        this.texHash = texHash;
-        this.bone = bone;
-        this.boneHash = boneHash;
-        this.slot = slot;
-        this.slotHash = slotHash;
-        this.skin = skin;
-        this.skinHash = skinHash;
-        this.animationHash = animationHash;
-        this.canvas = canvas;
+    this.ske = ske;
+    this.tex = tex;
+    parser.parseAndLoadTex(tex, (texHash) => {
+      this.texHash = texHash;
+      this.armature(props.armature, props);
+    }, props);
+  }
 
-        let defaultAction;
-        // 优先props指定，有可能不存在
-        if(props.defaultAction && animationHash[props.defaultAction]) {
-          let key = props.defaultPause ? 'gotoAndStop' : 'gotoAndPlay';
-          defaultAction = {
-            [key]: props.defaultAction,
-          };
-        }
-        // 不存在或没有指定使用ske文件的第一个
-        else if(defaultActions && defaultActions.length) {
-          defaultAction = defaultActions[0];
-        }
-        if(defaultAction) {
-          let a = this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
-          if(props.defaultPause || defaultAction.gotoAndStop) {
-            a.gotoAndStop(0);
-          }
-        }
-      }, props);
+  armature(name, options = {}) {
+    let op = karas.util.extend({}, options);
+    op.armature = name;
+    let {
+      bone,
+        boneHash,
+        slot,
+        slotHash,
+        skin,
+        skinHash,
+        animationHash,
+        defaultActions,
+        canvas,
+    } = parser.parseSke(this.ske, this.texHash, op);
+    this.bone = bone;
+    this.boneHash = boneHash;
+    this.slot = slot;
+    this.slotHash = slotHash;
+    this.skin = skin;
+    this.skinHash = skinHash;
+    this.animationHash = animationHash;
+    this.canvas = canvas;
+
+    let defaultAction;
+    if(options.action && animationHash[options.action]) {
+      let key = options.pause ? 'gotoAndStop' : 'gotoAndPlay';
+      defaultAction = {
+        [key]: options.action,
+      };
+    }
+    // 不存在或没有指定使用ske文件的第一个
+    else if(defaultActions && defaultActions.length) {
+      defaultAction = defaultActions[0];
+    }
+    if(defaultAction) {
+      let a = this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
+      if(options.pause || defaultAction.gotoAndStop) {
+        a.gotoAndStop(0);
+      }
+    }
+    else {
+      console.warn('No action data');
     }
   }
 
@@ -134,7 +142,8 @@ class Dragonbones extends karas.Component {
 
   changeImage(src) {
     if(src) {
-      let tex = this.props.tex;
+      let tex = this.tex;
+      tex.imagePath = src;
       let texHash = this.texHash;
       let img = document.createElement('img');
       img.onload = function() {

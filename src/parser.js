@@ -2,7 +2,7 @@ import karas from 'karas';
 
 const { inject, math } = karas;
 
-function parseAndLoadTex(tex, cb, props) {
+function parseAndLoadTex(tex, cb, props = {}) {
   let src = props.imagePath || tex.imagePath;
   let img = document.createElement('img');
   let texHash = {};
@@ -38,11 +38,28 @@ function parseAndLoadTex(tex, cb, props) {
   img.src = src;
 }
 
-function parseSke(ske, texHash, props) {
+function parseSke(ske, texHash, props = {}) {
   let {
     frameRate: globalFrameRate,
     armature,
   } = ske;
+  let currentArmature = armature[0];
+  if(props.armature) {
+    for(let i = 0, len = armature.length; i < len; i++) {
+      let item = armature[i];
+      if(item.name === props.armature) {
+        currentArmature = item;
+        break;
+      }
+    }
+    if(!currentArmature) {
+      throw new Error('Can not find armature: ' + props.armature);
+    }
+  }
+  if(!currentArmature) {
+    console.warn('No armature data');
+    return;
+  }
   let {
     bone,
     slot,
@@ -51,7 +68,7 @@ function parseSke(ske, texHash, props) {
     animation,
     defaultActions,
     canvas,
-  } = armature[0];
+  } = currentArmature;
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
   let skinHash = parseSkin(skin, texHash, props);

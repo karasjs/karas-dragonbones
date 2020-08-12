@@ -12,8 +12,9 @@ let root = karas.render(
       ske={ske} // 骨骼描述json
       tex={tex} // 骨骼纹理json
       imagePath={'url'} // 可选皮肤url，默认tex中指定
-      defaultAction={'name'} // 可选播放动作名称name，默认ske中指定
-      defaultPause={false} // 可选暂停在第一帧，默认ske中指定
+      armature={'name'} // 可选默认骨架名称name，默认ske中第一个
+      action={'name'} // 可选播放动作名称name，默认ske中指定
+      pause={false} // 可选暂停在第一帧，默认ske中指定
       fitSize={false} // 可选当ske指定画布尺寸时是否根据组件宽高进行缩放适配，默认false
       enlarge={0.25} // 可选mesh网格扩大裁剪像素，默认0.25
       enlargeSlot={{slot: 0.25}} // 可选单独slot名称配置mesh网格扩大裁剪像素，默认0.25
@@ -30,5 +31,6 @@ let root = karas.render(
 #### 组件上的对象：
 * animation: Animation WAA动画对象，karas.animate.Animation实例，可控制动画状态
 #### 组件上的方法：
+* armature(name: String, action?: String, pause?: Boolean) 播放指定name的骨架，可选action，可选第一帧暂停
 * action(name: String) 播放指定name的动画
 * changeImage(url: String) 加载并更换指定url的皮肤
