@@ -31,6 +31,6 @@ let root = karas.render(
 #### 组件上的对象：
 * animation: Animation WAA动画对象，karas.animate.Animation实例，可控制动画状态
 #### 组件上的方法：
-* armature(name: String, action?: String, pause?: Boolean) 播放指定name的骨架，可选action，可选第一帧暂停
+* armature(name: String, options?: Object) 播放指定name的骨架，可选options和props上一致
 * action(name: String) 播放指定name的动画
 * changeImage(url: String) 加载并更换指定url的皮肤
