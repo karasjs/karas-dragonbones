@@ -598,12 +598,7 @@
           var value = translateFrame.map(function (frame) {
             var _frame$duration = frame.duration,
                 d = _frame$duration === void 0 ? 1 : _frame$duration;
-
-            var _getEasing = getEasing(frame),
-                _getEasing2 = _slicedToArray(_getEasing, 2),
-                easing = _getEasing2[0],
-                easingFn = _getEasing2[1];
-
+            var easingFn = getEasing(frame);
             var offset = offsetSum / duration;
             offsetSum += d;
             var _originTransform$x = originTransform.x,
@@ -615,7 +610,6 @@
               translateX: (frame.x || 0) + x,
               translateY: (frame.y || 0) + y,
               offset: offset,
-              easing: easing,
               easingFn: easingFn
             };
 
@@ -638,12 +632,7 @@
           var _value = rotateFrame.map(function (frame) {
             var _frame$duration2 = frame.duration,
                 d = _frame$duration2 === void 0 ? 1 : _frame$duration2;
-
-            var _getEasing3 = getEasing(frame),
-                _getEasing4 = _slicedToArray(_getEasing3, 2),
-                easing = _getEasing4[0],
-                easingFn = _getEasing4[1];
-
+            var easingFn = getEasing(frame);
             var offset = _offsetSum / duration;
             _offsetSum += d;
             var _originTransform$skX = originTransform.skX,
@@ -652,7 +641,6 @@
               type: 1,
               rotateZ: (frame.rotate || 0) + skX,
               offset: offset,
-              easing: easing,
               easingFn: easingFn
             };
 
@@ -675,12 +663,7 @@
           var _value2 = scaleFrame.map(function (frame) {
             var _frame$duration3 = frame.duration,
                 d = _frame$duration3 === void 0 ? 1 : _frame$duration3;
-
-            var _getEasing5 = getEasing(frame),
-                _getEasing6 = _slicedToArray(_getEasing5, 2),
-                easing = _getEasing6[0],
-                easingFn = _getEasing6[1];
-
+            var easingFn = getEasing(frame);
             var offset = _offsetSum2 / duration;
             _offsetSum2 += d;
             var _originTransform$scX = originTransform.scX,
@@ -692,7 +675,6 @@
               scaleX: (frame.x === undefined ? 1 : frame.x) * scX,
               scaleY: (frame.y === undefined ? 1 : frame.y) * scY,
               offset: offset,
-              easing: easing,
               easingFn: easingFn
             };
 
@@ -732,6 +714,7 @@
           colorFrame.forEach(function (frame) {
             var _frame$duration5 = frame.duration,
                 d = _frame$duration5 === void 0 ? 1 : _frame$duration5;
+            frame.easingFn = getEasing(frame);
             var offset = _offsetSum3 / duration;
             _offsetSum3 += d;
             frame.offset = offset; // 没有value就用默认值
@@ -773,6 +756,7 @@
                 _frame$duration6 = frame.duration,
                 d = _frame$duration6 === void 0 ? 1 : _frame$duration6,
                 os = frame.offset;
+            frame.easingFn = getEasing(frame);
 
             if (os) {
               for (var i = 0; i < os; i++) {
@@ -815,11 +799,9 @@
   function getEasing(frame) {
     var curve = frame.curve;
 
-    if (curve) {
-      return ["(".concat(curve.join(','), ")"), karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3])];
+    if (curve && curve[0] !== 1 && curve[1] !== 1 && curve[2] !== 0 && curve[3] !== 0) {
+      return karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
     }
-
-    return ['linear', karas.easing.linear];
   }
 
   var parser = {
@@ -838,7 +820,8 @@
   function animateBoneMatrix(animationList, offset, boneHash) {
     animationList.forEach(function (item) {
       var name = item.name,
-          list = item.list;
+          list = item.list,
+          easingFn = item.easingFn;
       var bone = boneHash[name]; // 先以静态变换样式为基础
 
       var _bone$transform = bone.transform,
@@ -854,7 +837,8 @@
         var len = frames.length;
         var type = frames[0].type;
         var i = binarySearch(0, len - 1, offset, frames);
-        var current = frames[i]; // 是否最后一帧
+        var current = frames[i];
+        var easingFn = current.easingFn; // 是否最后一帧
 
         if (i === len - 1) {
           if (type === 0) {
@@ -870,6 +854,10 @@
           var next = frames[i + 1];
           var total = next.offset - current.offset;
           var percent = (offset - current.offset) / total;
+
+          if (easingFn) {
+            percent = easingFn(percent);
+          }
 
           if (type === 0) {
             res.translateX = current.translateX + current.dx * percent;
@@ -983,7 +971,8 @@
 
         var _i = binarySearch(0, len - 1, offset, colorFrame);
 
-        var current = colorFrame[_i]; // 是否最后一帧
+        var current = colorFrame[_i];
+        var easingFn = current.easing; // 是否最后一帧
 
         if (_i === len - 1) {
           slot.colorA = current.value;
@@ -991,6 +980,11 @@
           var next = colorFrame[_i + 1];
           var total = next.offset - current.offset;
           var percent = (offset - current.offset) / total;
+
+          if (easingFn) {
+            percent = easingFn(percent);
+          }
+
           slot.colorA = {
             aM: current.value.aM + current.da * percent
           };
@@ -1069,7 +1063,8 @@
           if (frame) {
             var len = frame.length;
             var i = binarySearch(0, len - 1, offset, frame);
-            var current = frame[i]; // 是否最后一帧
+            var current = frame[i];
+            var easingFn = current.easingFn; // 是否最后一帧
 
             if (i === len - 1) {
               var vertices = current.vertices;
@@ -1093,6 +1088,11 @@
               var next = frame[i + 1];
               var total = next.offset - current.offset;
               var percent = (offset - current.offset) / total;
+
+              if (easingFn) {
+                percent = easingFn(percent);
+              }
+
               var _vertices = current.vertices,
                   dv = current.dv;
 

@@ -18,9 +18,11 @@ let root = karas.render(
       playbackRate={1} // 可选播放速度，默认1
       fps={60} // 可选播放fps，默认60
       debug={false} //可选展示调试绘制，默认false
+      debugBone={false} //可选展示调试绘制骨骼，默认false
+      debugSlot={false} //可选展示调试绘制插槽，默认false
     />
   </canvas>,
-  '#dom'
+  '#domId'
 );
 ```
 #### 组件上的对象：

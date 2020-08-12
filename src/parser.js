@@ -351,7 +351,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
         let last;
         let value = translateFrame.map(frame => {
           let { duration: d = 1 } = frame;
-          let [easing, easingFn] = getEasing(frame);
+          let easingFn = getEasing(frame);
           let offset = offsetSum / duration;
           offsetSum += d;
           let { x = 0, y = 0 } = originTransform;
@@ -360,7 +360,6 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
             translateX: (frame.x || 0) + x,
             translateY: (frame.y || 0) + y,
             offset,
-            easing,
             easingFn,
           };
           if(last) {
@@ -377,7 +376,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
         let last;
         let value = rotateFrame.map(frame => {
           let { duration: d = 1 } = frame;
-          let [easing, easingFn] = getEasing(frame);
+          let easingFn = getEasing(frame);
           let offset = offsetSum / duration;
           offsetSum += d;
           let { skX = 0 } = originTransform;
@@ -385,7 +384,6 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
             type: 1,
             rotateZ: (frame.rotate || 0) + skX,
             offset,
-            easing,
             easingFn,
           };
           if(last) {
@@ -401,7 +399,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
         let last;
         let value = scaleFrame.map(frame => {
           let { duration: d = 1 } = frame;
-          let [easing, easingFn] = getEasing(frame);
+          let easingFn = getEasing(frame);
           let offset = offsetSum / duration;
           offsetSum += d;
           let { scX = 1, scY = 1 } = originTransform;
@@ -410,7 +408,6 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
             scaleX: (frame.x === undefined ? 1 : frame.x) * scX,
             scaleY: (frame.y === undefined ? 1 : frame.y) * scY,
             offset,
-            easing,
             easingFn,
           };
           if(last) {
@@ -441,6 +438,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
         let last;
         colorFrame.forEach(frame => {
           let { duration: d = 1 } = frame;
+          frame.easingFn = getEasing(frame);
           let offset = offsetSum / duration;
           offsetSum += d;
           frame.offset = offset;
@@ -472,6 +470,7 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
         let last;
         frame.forEach(frame => {
           let { vertices, duration: d = 1, offset: os } = frame;
+          frame.easingFn = getEasing(frame);
           if(os) {
             for(let i = 0; i < os; i++) {
               vertices.unshift(0);
@@ -507,13 +506,9 @@ function parseAnimation(data, frameRate, boneHash, slotHash, skinHash) {
 
 function getEasing(frame) {
   let curve = frame.curve;
-  if(curve) {
-    return [
-      `(${curve.join(',')})`,
-      karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3])
-    ];
+  if(curve && curve[0] !== 1 && curve[1] !== 1 && curve[2] !== 0 && curve[3] !== 0) {
+    return karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
   }
-  return ['linear', karas.easing.linear];
 }
 
 export default {

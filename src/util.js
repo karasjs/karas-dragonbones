@@ -10,7 +10,7 @@ const { math } = karas;
  */
 function animateBoneMatrix(animationList, offset, boneHash) {
   animationList.forEach(item => {
-    let { name, list } = item;
+    let { name, list, easingFn } = item;
     let bone = boneHash[name];
     // 先以静态变换样式为基础
     let { transform = {} } = bone;
@@ -26,6 +26,7 @@ function animateBoneMatrix(animationList, offset, boneHash) {
       let type = frames[0].type;
       let i = binarySearch(0, len - 1, offset, frames);
       let current = frames[i];
+      let easingFn = current.easingFn;
       // 是否最后一帧
       if(i === len - 1) {
         if(type === 0) {
@@ -44,6 +45,9 @@ function animateBoneMatrix(animationList, offset, boneHash) {
         let next = frames[i + 1];
         let total = next.offset - current.offset;
         let percent = (offset - current.offset) / total;
+        if(easingFn) {
+          percent = easingFn(percent);
+        }
         if(type === 0) {
           res.translateX = current.translateX + current.dx * percent;
           res.translateY = current.translateY + current.dy * percent;
@@ -145,6 +149,7 @@ function animateSlot(slotAnimationList, offset, slotHash) {
       let len = colorFrame.length;
       let i = binarySearch(0, len - 1, offset, colorFrame);
       let current = colorFrame[i];
+      let easingFn = current.easing;
       // 是否最后一帧
       if(i === len - 1) {
         slot.colorA = current.value;
@@ -153,6 +158,9 @@ function animateSlot(slotAnimationList, offset, slotHash) {
         let next = colorFrame[i + 1];
         let total = next.offset - current.offset;
         let percent = (offset - current.offset) / total;
+        if(easingFn) {
+          percent = easingFn(percent);
+        }
         slot.colorA = {
           aM: current.value.aM + current.da * percent,
         };
@@ -219,6 +227,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
           let len = frame.length;
           let i = binarySearch(0, len - 1, offset, frame);
           let current = frame[i];
+          let easingFn = current.easingFn;
           // 是否最后一帧
           if(i === len - 1) {
             let { vertices } = current;
@@ -240,6 +249,9 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
             let next = frame[i + 1];
             let total = next.offset - current.offset;
             let percent = (offset - current.offset) / total;
+            if(easingFn) {
+              percent = easingFn(percent);
+            }
             let { vertices, dv } = current;
             if(vertices || dv) {
               for(let i = 0, len = (vertices || dv).length; i < len - 1; i += 2) {
