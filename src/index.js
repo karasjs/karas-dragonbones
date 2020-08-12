@@ -22,7 +22,7 @@ class Dragonbones extends karas.Component {
           animationHash,
           defaultActions,
           canvas,
-        } = parser.parseSke(ske, texHash);
+        } = parser.parseSke(ske, texHash, props);
         this.texHash = texHash;
         this.bone = bone;
         this.boneHash = boneHash;
@@ -51,7 +51,7 @@ class Dragonbones extends karas.Component {
             a.gotoAndStop(0);
           }
         }
-      }, props.imagePath);
+      }, props);
     }
   }
 
@@ -98,12 +98,19 @@ class Dragonbones extends karas.Component {
         let t = karas.math.matrix.identity();
         t[4] = left;
         t[5] = top;
-        // 适配尺寸
-        if(self.canvas && self.props.fitSize) {
-          let sx = computedStyle.width / self.canvas.width;
-          let sy = computedStyle.height / self.canvas.height;
-          t[0] = sx;
-          t[3] = sy;
+        // 画布居中
+        if(self.canvas) {
+          let dx = self.canvas.x || 0;
+          let dy = self.canvas.y || 0;
+          t[4] -= dx * 0.5;
+          t[5] -= dy * 0.5;
+          // 适配尺寸
+          if(self.props.fitSize) {
+            let sx = computedStyle.width / self.canvas.width;
+            let sy = computedStyle.height / self.canvas.height;
+            t[0] = sx;
+            t[3] = sy;
+          }
         }
         matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
         render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);

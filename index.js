@@ -197,8 +197,8 @@
   var inject = karas.inject,
       math = karas.math;
 
-  function parseAndLoadTex(tex, cb, path) {
-    var src = path || tex.imagePath;
+  function parseAndLoadTex(tex, cb, props) {
+    var src = props.imagePath || tex.imagePath;
     var img = document.createElement('img');
     var texHash = {};
 
@@ -248,7 +248,7 @@
     img.src = src;
   }
 
-  function parseSke(ske, texHash) {
+  function parseSke(ske, texHash, props) {
     var globalFrameRate = ske.frameRate,
         armature = ske.armature;
     var _armature$ = armature[0],
@@ -261,7 +261,7 @@
         canvas = _armature$.canvas;
     var boneHash = parseBone(bone);
     var slotHash = parseSlot(slot);
-    var skinHash = parseSkin(skin, texHash);
+    var skinHash = parseSkin(skin, texHash, props);
     var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
     return {
       bone: bone,
@@ -329,12 +329,12 @@
     return hash;
   }
 
-  function parseSkin(data, texHash) {
+  function parseSkin(data, texHash, props) {
     var hash = {};
     data[0].slot.forEach(function (item) {
-      var name = item.name,
+      var slotName = item.name,
           display = item.display;
-      hash[name] = item;
+      hash[slotName] = item;
       display.forEach(function (item) {
         var type = item.type,
             name = item.name,
@@ -473,14 +473,31 @@
               var x2 = p2x * width;
               var y2 = p2y * height;
               var x3 = p3x * width;
-              var y3 = p3y * height; // 从内心往外扩展约0.5px
+              var y3 = p3y * height; // 从内心往外扩展约0.25px，可参数指定
 
               var _math$geom$triangleIn = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3),
                   _math$geom$triangleIn2 = _slicedToArray(_math$geom$triangleIn, 2),
                   x0 = _math$geom$triangleIn2[0],
                   y0 = _math$geom$triangleIn2[1];
 
-              var scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25); // 以内心为transformOrigin
+              var px = parseFloat(props.enlarge);
+
+              if (isNaN(px)) {
+                px = 0.25;
+              } // 单独为slot配置的扩展参数
+
+
+              if (props.enlargeSlot && props.enlargeSlot.hasOwnProperty(slotName)) {
+                var n = parseFloat(props.enlargeSlot[slotName]);
+
+                if (isNaN(n)) {
+                  n = 0.25;
+                }
+
+                px = n;
+              }
+
+              var scale = px ? triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, px) : 1; // 以内心为transformOrigin
 
               var m = math.matrix.identity();
               m[4] = -x0;
@@ -1416,7 +1433,7 @@
 
         if (ske && tex && karas.util.isObject(ske) && karas.util.isObject(tex)) {
           parser.parseAndLoadTex(tex, function (texHash) {
-            var _parser$parseSke = parser.parseSke(ske, texHash),
+            var _parser$parseSke = parser.parseSke(ske, texHash, props),
                 bone = _parser$parseSke.bone,
                 boneHash = _parser$parseSke.boneHash,
                 slot = _parser$parseSke.slot,
@@ -1453,7 +1470,7 @@
                 a.gotoAndStop(0);
               }
             }
-          }, props.imagePath);
+          }, props);
         }
       }
     }, {
@@ -1510,13 +1527,20 @@
             var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
             var t = karas.math.matrix.identity();
             t[4] = left;
-            t[5] = top; // 适配尺寸
+            t[5] = top; // 画布居中
 
-            if (self.canvas && self.props.fitSize) {
-              var sx = computedStyle.width / self.canvas.width;
-              var sy = computedStyle.height / self.canvas.height;
-              t[0] = sx;
-              t[3] = sy;
+            if (self.canvas) {
+              var dx = self.canvas.x || 0;
+              var dy = self.canvas.y || 0;
+              t[4] -= dx * 0.5;
+              t[5] -= dy * 0.5; // 适配尺寸
+
+              if (self.props.fitSize) {
+                var sx = computedStyle.width / self.canvas.width;
+                var sy = computedStyle.height / self.canvas.height;
+                t[0] = sx;
+                t[3] = sy;
+              }
             }
 
             matrixEvent = karas.math.matrix.multiply(matrixEvent, t);

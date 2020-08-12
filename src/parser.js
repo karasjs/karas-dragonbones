@@ -2,8 +2,8 @@ import karas from 'karas';
 
 const { inject, math } = karas;
 
-function parseAndLoadTex(tex, cb, path) {
-  let src = path || tex.imagePath;
+function parseAndLoadTex(tex, cb, props) {
+  let src = props.imagePath || tex.imagePath;
   let img = document.createElement('img');
   let texHash = {};
   img.onload = function() {
@@ -38,7 +38,7 @@ function parseAndLoadTex(tex, cb, path) {
   img.src = src;
 }
 
-function parseSke(ske, texHash) {
+function parseSke(ske, texHash, props) {
   let {
     frameRate: globalFrameRate,
     armature,
@@ -54,7 +54,7 @@ function parseSke(ske, texHash) {
   } = armature[0];
   let boneHash = parseBone(bone);
   let slotHash = parseSlot(slot);
-  let skinHash = parseSkin(skin, texHash);
+  let skinHash = parseSkin(skin, texHash, props);
   let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash, slotHash, skinHash);
   return {
     bone,
@@ -113,11 +113,11 @@ function parseBone(data) {
   return hash;
 }
 
-function parseSkin(data, texHash) {
+function parseSkin(data, texHash, props) {
   let hash = {};
   data[0].slot.forEach(item => {
-    let { name, display } = item;
-    hash[name] = item;
+    let { name: slotName, display } = item;
+    hash[slotName] = item;
     display.forEach(item => {
       let { type, name, path } = item;
       // mesh网格分析三角形
@@ -227,9 +227,21 @@ function parseSkin(data, texHash) {
           let y2 = p2y * height;
           let x3 = p3x * width;
           let y3 = p3y * height;
-          // 从内心往外扩展约0.5px
+          // 从内心往外扩展约0.25px，可参数指定
           let [x0, y0] = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3);
-          let scale = triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, 0.25);
+          let px = parseFloat(props.enlarge);
+          if(isNaN(px)) {
+            px = 0.25;
+          }
+          // 单独为slot配置的扩展参数
+          if(props.enlargeSlot && props.enlargeSlot.hasOwnProperty(slotName)) {
+            let n = parseFloat(props.enlargeSlot[slotName]);
+            if(isNaN(n)) {
+              n = 0.25;
+            }
+            px = n;
+          }
+          let scale = px ? triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, px) : 1;
           // 以内心为transformOrigin
           let m = math.matrix.identity();
           m[4] = -x0;
