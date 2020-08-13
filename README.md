@@ -5,7 +5,7 @@ Dragonbones component for karas.
 ```jsx
 import Dragonbones from 'karas-dragonbones';
 
-let root = karas.render(
+karas.render(
   <canvas width="720" height="720">
     <Dragonbones
       ref="db"
