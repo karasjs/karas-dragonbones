@@ -10,9 +10,9 @@ class Dragonbones extends karas.Component {
     if(ske.version !== '5.5') {
       throw new Error('The version' + ske.version + ' does not match 5.5');
     }
-    this.ske = ske;
-    this.tex = tex;
-    parser.parseAndLoadTex(tex, (texHash) => {
+    this.ske = karas.util.clone(ske);
+    this.tex = karas.util.clone(tex);
+    parser.parseAndLoadTex(this.tex, (texHash) => {
       this.texHash = texHash;
       this.armature(props.armature, props);
     }, props);

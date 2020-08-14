@@ -1461,9 +1461,9 @@
           throw new Error('The version' + ske.version + ' does not match 5.5');
         }
 
-        this.ske = ske;
-        this.tex = tex;
-        parser.parseAndLoadTex(tex, function (texHash) {
+        this.ske = karas.util.clone(ske);
+        this.tex = karas.util.clone(tex);
+        parser.parseAndLoadTex(this.tex, function (texHash) {
           _this.texHash = texHash;
 
           _this.armature(props.armature, props);
