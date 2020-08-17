@@ -48,6 +48,7 @@ function parseSke(ske, texHash, props = {}) {
     return;
   }
   let {
+    name,
     bone,
     slot,
     skin,
@@ -61,6 +62,7 @@ function parseSke(ske, texHash, props = {}) {
   let skinHash = parseSkin(skin, texHash, props);
   let animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
   return {
+    name,
     bone,
     boneHash,
     slot,

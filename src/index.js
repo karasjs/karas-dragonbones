@@ -24,20 +24,21 @@ class Dragonbones extends karas.Component {
   }
 
   armature(name, options = {}) {
-    this.armatureName = name;
     let op = karas.util.extend({}, options);
     op.armature = name;
     let {
+      name: n,
       bone,
-        boneHash,
-        slot,
-        slotHash,
-        skin,
-        skinHash,
-        animationHash,
-        defaultActions,
-        canvas,
+      boneHash,
+      slot,
+      slotHash,
+      skin,
+      skinHash,
+      animationHash,
+      defaultActions,
+      canvas,
     } = parser.parseSke(this.ske, this.texHash, op);
+    this.armatureName = n;
     this.bone = bone;
     this.boneHash = boneHash;
     this.slot = slot;

@@ -200,18 +200,8 @@
   function parseAndLoadTex(tex, cb) {
     var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
     var src = props.imagePath || tex.imagePath;
-    var img = document.createElement('img');
     var texHash = {};
-
-    img.onload = function () {
-      // 提前设置测量加载此图
-      inject.IMG[src] = {
-        width: tex.width,
-        height: tex.height,
-        state: karas.inject.LOADED,
-        source: img,
-        url: src
-      };
+    inject.measureImg(src, function () {
       tex.SubTexture.forEach(function (item) {
         var name = item.name,
             x = item.x,
@@ -236,17 +226,11 @@
           frameY: frameY,
           frameWidth: frameWidth,
           frameHeight: frameHeight,
-          source: img
+          source: inject.IMG[src].source
         };
       });
       cb(texHash);
-    };
-
-    img.onerror = function () {
-      throw new Error('Can not find tex: ' + src);
-    };
-
-    img.src = src;
+    });
   }
 
   function parseSke(ske, texHash) {
@@ -276,6 +260,7 @@
     }
 
     var _currentArmature = currentArmature,
+        name = _currentArmature.name,
         bone = _currentArmature.bone,
         slot = _currentArmature.slot,
         skin = _currentArmature.skin,
@@ -288,6 +273,7 @@
     var skinHash = parseSkin(skin, texHash, props);
     var animationHash = parseAnimation(animation, frameRate || globalFrameRate || 60, boneHash);
     return {
+      name: name,
       bone: bone,
       boneHash: boneHash,
       slot: slot,
@@ -1437,6 +1423,8 @@
     canvasBone: canvasBone
   };
 
+  var uuid = 0;
+
   var Dragonbones = /*#__PURE__*/function (_karas$Component) {
     _inherits(Dragonbones, _karas$Component);
 
@@ -1458,6 +1446,7 @@
         this.staticCacheHash = {};
         var ske = props.ske,
             tex = props.tex;
+        ske.uuid = ske.uuid || ++uuid;
 
         if (ske.version !== '5.5') {
           throw new Error('The version' + ske.version + ' does not match 5.5');
@@ -1475,11 +1464,11 @@
       key: "armature",
       value: function armature(name) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-        this.armatureName = name;
         var op = karas.util.extend({}, options);
         op.armature = name;
 
         var _parser$parseSke = parser.parseSke(this.ske, this.texHash, op),
+            n = _parser$parseSke.name,
             bone = _parser$parseSke.bone,
             boneHash = _parser$parseSke.boneHash,
             slot = _parser$parseSke.slot,
@@ -1490,6 +1479,7 @@
             defaultActions = _parser$parseSke.defaultActions,
             canvas = _parser$parseSke.canvas;
 
+        this.armatureName = n;
         this.bone = bone;
         this.boneHash = boneHash;
         this.slot = slot;
@@ -1572,8 +1562,9 @@
             offScreen = karas.inject.getCacheCanvas(width, height);
             sourceCtx = ctx;
             ctx = offScreen.ctx;
-            var frame = Math.floor(a.currentTime * (self.fps || 60) / 1000);
-            key = self.armatureName + '>' + self.actionName + '>' + frame;
+            var frame = Math.floor(a.currentTime * (self.fps || 60) / 1000); // ske文件uuid + 骨架名 + 动画名 + 帧数
+
+            key = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
             var cache = self.staticCacheHash[key];
 
             if (cache) {
@@ -1651,27 +1642,12 @@
           var tex = this.tex;
           tex.imagePath = src;
           var texHash = this.texHash;
-          var img = document.createElement('img');
-
-          img.onload = function () {
-            karas.inject.IMG[src] = {
-              width: tex.width,
-              height: tex.height,
-              state: karas.inject.LOADED,
-              source: img,
-              url: src
-            };
+          karas.inject.measureImg(src, function () {
             tex.SubTexture.forEach(function (item) {
               var name = item.name;
-              texHash[name].source = img;
+              texHash[name].source = karas.inject.IMG[src].source;
             });
-          };
-
-          img.onerror = function () {
-            throw new Error('Can not find tex: ' + src);
-          };
-
-          img.src = src;
+          });
         }
       }
     }, {
