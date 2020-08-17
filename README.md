@@ -18,6 +18,7 @@ karas.render(
       fitSize={false} // 可选当ske指定画布尺寸时是否根据组件宽高进行缩放适配，默认false
       enlarge={0.25} // 可选mesh网格扩大裁剪像素，默认0.25
       enlargeSlot={{slot: 0.25}} // 可选单独slot名称配置mesh网格扩大裁剪像素，默认0.25
+      staticCache={false} //可选开启静态帧优化，每帧渲染后缓存，默认false
       playbackRate={1} // 可选播放速度，默认1
       fps={60} // 可选播放fps，默认60
       debug={false} //可选展示调试绘制，默认false
@@ -34,3 +35,5 @@ karas.render(
 * armature(name: String, options?: Object) 播放指定name的骨架，可选options和props上一致
 * action(name: String) 播放指定name的动画
 * changeImage(url: String) 加载并更换指定url的皮肤
+* setStaticCache(flag: Boolean) 设置是否开启静态帧优化
+* cleanStaticCache() 清空静态帧优化的缓存

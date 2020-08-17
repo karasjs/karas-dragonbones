@@ -841,7 +841,7 @@
     var curve = frame.curve;
 
     if (curve && curve[0] !== 1 && curve[1] !== 1 && curve[2] !== 0 && curve[3] !== 0) {
-      return karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
+      return karas.animate.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
     }
   }
 
@@ -1454,6 +1454,8 @@
         var _this = this;
 
         var props = this.props;
+        this.staticCacheFlag = !!props.staticCache;
+        this.staticCacheHash = {};
         var ske = props.ske,
             tex = props.tex;
 
@@ -1473,6 +1475,7 @@
       key: "armature",
       value: function armature(name) {
         var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        this.armatureName = name;
         var op = karas.util.extend({}, options);
         op.armature = name;
 
@@ -1520,6 +1523,7 @@
     }, {
       key: "action",
       value: function action(name) {
+        this.actionName = name;
         var animation = this.animationHash[name];
 
         if (!animation) {
@@ -1554,8 +1558,33 @@
         }], options); // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
 
         var self = this;
+        var root = self.root;
+        var width = root.width;
+        var height = root.height;
 
         fake.render = function (renderMode, ctx, defs) {
+          // 开启了静态帧优化优先使用缓存
+          var offScreen;
+          var sourceCtx;
+          var key;
+
+          if (self.staticCacheFlag) {
+            offScreen = karas.inject.getCacheCanvas(width, height);
+            sourceCtx = ctx;
+            ctx = offScreen.ctx;
+            var frame = Math.floor(a.currentTime * (self.fps || 60) / 1000);
+            key = self.armatureName + '>' + self.actionName + '>' + frame;
+            var cache = self.staticCacheHash[key];
+
+            if (cache) {
+              ctx.putImageData(cache, 0, 0);
+              offScreen.draw(ctx);
+              sourceCtx.drawImage(offScreen.canvas, 0, 0);
+              ctx.clearRect(0, 0, width, height);
+              return;
+            }
+          }
+
           var offset = Math.min(1, a.currentTime / a.duration);
           util.animateBoneMatrix(boneAnimationList, offset, self.boneHash);
           util.mergeBoneMatrix(self.bone[0]);
@@ -1601,6 +1630,14 @@
               if (self.props.debugSlot) {
                 render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
               }
+            } // 静态帧优化将离屏内容绘入
+
+
+            if (self.staticCacheFlag) {
+              offScreen.draw(ctx);
+              sourceCtx.drawImage(offScreen.canvas, 0, 0);
+              self.staticCacheHash[key] = ctx.getImageData(0, 0, width, height);
+              ctx.clearRect(0, 0, width, height);
             }
           }
         };
@@ -1636,6 +1673,16 @@
 
           img.src = src;
         }
+      }
+    }, {
+      key: "setStaticCache",
+      value: function setStaticCache(flag) {
+        this.staticCacheFlag = !!flag;
+      }
+    }, {
+      key: "cleanStaticCache",
+      value: function cleanStaticCache() {
+        this.staticCacheHash = {};
       }
     }, {
       key: "render",

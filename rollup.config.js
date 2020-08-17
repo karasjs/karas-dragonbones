@@ -1,6 +1,6 @@
 import babel from 'rollup-plugin-babel';
 import json from '@rollup/plugin-json';
-import karas from 'rollup-plugin-karas';
+import csx from 'rollup-plugin-csx';
 
 export default [{
   input: 'src/index.js',
@@ -14,7 +14,7 @@ export default [{
     },
   },
   plugins: [
-    karas(),
+    csx(),
     babel({
       exclude: 'node_modules/**', // 只编译我们的源代码
       runtimeHelpers: true

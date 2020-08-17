@@ -1,6 +1,6 @@
 {
   "name": "karas-dragonbones",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Dragonbones component for karas.",
   "maintainers": [
     {
@@ -17,7 +17,7 @@
     "url": "git://github.com/karasjs/karas-dragonebones.git"
   },
   "dependencies": {
-    "karas": "^0.33.4"
+    "karas": "^0.35.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",
@@ -26,7 +26,7 @@
     "@rollup/plugin-json": "^4.0.3",
     "rollup": "^1.32.1",
     "rollup-plugin-babel": "^4.4.0",
-    "rollup-plugin-karas": "^0.1.0",
+    "rollup-plugin-csx": "^0.1.0",
     "rollup-plugin-sourcemaps": "^0.5.0",
     "webstorm-disable-index": "^1.2.0",
     "yurine": "~0.3.1"

@@ -4,17 +4,8 @@ const { inject, math } = karas;
 
 function parseAndLoadTex(tex, cb, props = {}) {
   let src = props.imagePath || tex.imagePath;
-  let img = document.createElement('img');
   let texHash = {};
-  img.onload = function() {
-    // 提前设置测量加载此图
-    inject.IMG[src] = {
-      width: tex.width,
-      height: tex.height,
-      state: karas.inject.LOADED,
-      source: img,
-      url: src,
-    };
+  inject.measureImg(src, function() {
     tex.SubTexture.forEach(item => {
       let { name, x, y, width, height, frameX = 0, frameY = 0, frameWidth = width, frameHeight = height } = item;
       texHash[name] = {
@@ -27,15 +18,11 @@ function parseAndLoadTex(tex, cb, props = {}) {
         frameY,
         frameWidth,
         frameHeight,
-        source: img,
+        source: inject.IMG[src].source,
       };
     });
     cb(texHash);
-  };
-  img.onerror = function() {
-    throw new Error('Can not find tex: ' + src);
-  };
-  img.src = src;
+  });
 }
 
 function parseSke(ske, texHash, props = {}) {
@@ -536,7 +523,7 @@ function parseAnimation(data, frameRate, boneHash) {
 function getEasing(frame) {
   let curve = frame.curve;
   if(curve && curve[0] !== 1 && curve[1] !== 1 && curve[2] !== 0 && curve[3] !== 0) {
-    return karas.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
+    return karas.animate.easing.cubicBezier(curve[0], curve[1], curve[2], curve[3]);
   }
 }
 

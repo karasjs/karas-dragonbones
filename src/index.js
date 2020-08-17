@@ -3,10 +3,15 @@ import parser from './parser';
 import util from './util';
 import render from './render';
 
+let uuid = 0;
+
 class Dragonbones extends karas.Component {
   componentDidMount() {
     let props = this.props;
+    this.staticCacheFlag = !!props.staticCache;
+    this.staticCacheHash = {};
     let { ske, tex } = props;
+    ske.uuid = ske.uuid || ++uuid;
     if(ske.version !== '5.5') {
       throw new Error('The version' + ske.version + ' does not match 5.5');
     }
@@ -19,6 +24,7 @@ class Dragonbones extends karas.Component {
   }
 
   armature(name, options = {}) {
+    this.armatureName = name;
     let op = karas.util.extend({}, options);
     op.armature = name;
     let {
@@ -65,6 +71,7 @@ class Dragonbones extends karas.Component {
   }
 
   action(name) {
+    this.actionName = name;
     let animation = this.animationHash[name];
     if(!animation) {
       throw new Error('Can not find animation: ' + name);
@@ -93,7 +100,30 @@ class Dragonbones extends karas.Component {
     ], options);
     // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
     let self = this;
+    let root = self.root;
+    let width = root.width;
+    let height = root.height;
     fake.render = function(renderMode, ctx, defs) {
+      // 开启了静态帧优化优先使用缓存
+      let offScreen;
+      let sourceCtx;
+      let key;
+      if(self.staticCacheFlag) {
+        offScreen = karas.inject.getCacheCanvas(width, height);
+        sourceCtx = ctx;
+        ctx = offScreen.ctx;
+        let frame = Math.floor(a.currentTime * (self.fps || 60) / 1000);
+        // ske文件uuid + 骨架名 + 动画名 + 帧数
+        key = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
+        let cache = self.staticCacheHash[key];
+        if(cache) {
+          ctx.putImageData(cache, 0, 0);
+          offScreen.draw(ctx);
+          sourceCtx.drawImage(offScreen.canvas, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+          return;
+        }
+      }
       let offset = Math.min(1, a.currentTime / a.duration);
       util.animateBoneMatrix(boneAnimationList, offset, self.boneHash);
       util.mergeBoneMatrix(self.bone[0]);
@@ -136,6 +166,13 @@ class Dragonbones extends karas.Component {
             render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
           }
         }
+        // 静态帧优化将离屏内容绘入
+        if(self.staticCacheFlag) {
+          offScreen.draw(ctx);
+          sourceCtx.drawImage(offScreen.canvas, 0, 0);
+          self.staticCacheHash[key] = ctx.getImageData(0, 0, width, height);
+          ctx.clearRect(0, 0, width, height);
+        }
       }
     };
     return a;
@@ -146,25 +183,21 @@ class Dragonbones extends karas.Component {
       let tex = this.tex;
       tex.imagePath = src;
       let texHash = this.texHash;
-      let img = document.createElement('img');
-      img.onload = function() {
-        karas.inject.IMG[src] = {
-          width: tex.width,
-          height: tex.height,
-          state: karas.inject.LOADED,
-          source: img,
-          url: src,
-        };
+      karas.inject.measureImg(src, function() {
         tex.SubTexture.forEach(item => {
           let { name } = item;
-          texHash[name].source = img;
+          texHash[name].source = karas.inject.IMG[src].source;
         });
-      };
-      img.onerror = function() {
-        throw new Error('Can not find tex: ' + src);
-      };
-      img.src = src;
+      });
     }
+  }
+
+  setStaticCache(flag) {
+    this.staticCacheFlag = !!flag;
+  }
+
+  cleanStaticCache() {
+    this.staticCacheHash = {};
   }
 
   render() {
