@@ -1663,9 +1663,12 @@
     }, {
       key: "render",
       value: function render() {
-        return karas.createVd("div", [], [karas.createGm("$line", [["ref", "fake"], ["style", {
-          display: 'none'
-        }]])]);
+        return karas.createVd("div", {}, [karas.createGm("$line", {
+          "ref": "fake",
+          "style": {
+            display: 'none'
+          }
+        })]);
       }
     }]);
 
