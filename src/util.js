@@ -220,7 +220,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         item.matrixF = null;
       });
       // 如果有ffd自定义顶点变换，计算偏移量matrix
-      let ffd = ffdAnimationHash[name + '>' + displayTarget.name];
+      let ffd = ffdAnimationHash[name + '>' + (displayTarget.path || displayTarget.name)];
       if(ffd) {
         let { frame } = ffd;
         if(frame) {
@@ -305,7 +305,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
     // 默认图片类型
     else {
       let { transform = {} } = displayTarget;
-      let tex = texHash[displayTarget.name];
+      let tex = texHash[displayTarget.path || displayTarget.name];
       let parentBoneMatrix = boneHash[parent].currentMatrix;
       let matrix = math.matrix.identity();
       // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移

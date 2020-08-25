@@ -1081,7 +1081,7 @@
           item.matrixF = null;
         }); // 如果有ffd自定义顶点变换，计算偏移量matrix
 
-        var ffd = ffdAnimationHash[name + '>' + displayTarget.name];
+        var ffd = ffdAnimationHash[name + '>' + (displayTarget.path || displayTarget.name)];
 
         if (ffd) {
           var frame = ffd.frame;
@@ -1188,7 +1188,7 @@
       else {
           var _displayTarget$transf = displayTarget.transform,
               transform = _displayTarget$transf === void 0 ? {} : _displayTarget$transf;
-          var tex = texHash[displayTarget.name];
+          var tex = texHash[displayTarget.path || displayTarget.name];
           var parentBoneMatrix = boneHash[parent].currentMatrix;
           var matrix = math$1.matrix.identity(); // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移
 
@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.3.0";
+  var version = "0.3.2";
 
   var uuid = 0;
   var SHARE_CACHE = {};
