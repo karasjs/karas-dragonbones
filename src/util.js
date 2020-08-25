@@ -10,7 +10,7 @@ const { math } = karas;
  */
 function animateBoneMatrix(animationList, offset, boneHash) {
   animationList.forEach(item => {
-    let { name, list, easingFn } = item;
+    let { name, list } = item;
     let bone = boneHash[name];
     // 先以静态变换样式为基础
     let { transform = {} } = bone;

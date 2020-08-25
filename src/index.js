@@ -2,8 +2,11 @@ import karas from 'karas';
 import parser from './parser';
 import util from './util';
 import render from './render';
+import { version } from '../package.json';
 
 let uuid = 0;
+
+const SHARE_CACHE = {};
 
 class Dragonbones extends karas.Component {
   componentDidMount() {
@@ -108,15 +111,15 @@ class Dragonbones extends karas.Component {
       // 开启了静态帧优化优先使用缓存
       let offScreen;
       let sourceCtx;
-      let key;
+      let staticKey;
       if(self.staticCacheFlag) {
         offScreen = karas.inject.getCacheCanvas(width, height);
         sourceCtx = ctx;
         ctx = offScreen.ctx;
         let frame = Math.floor(a.currentTime * (self.fps || 60) / 1000);
         // ske文件uuid + 骨架名 + 动画名 + 帧数
-        key = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
-        let cache = self.staticCacheHash[key];
+        staticKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
+        let cache = self.staticCacheHash[staticKey];
         if(cache) {
           ctx.putImageData(cache, 0, 0);
           offScreen.draw(ctx);
@@ -125,11 +128,28 @@ class Dragonbones extends karas.Component {
           return;
         }
       }
-      let offset = Math.min(1, a.currentTime / a.duration);
-      util.animateBoneMatrix(boneAnimationList, offset, self.boneHash);
-      util.mergeBoneMatrix(self.bone[0]);
-      util.animateSlot(slotAnimationList, offset, self.slotHash);
-      util.calSlot(offset, self.slot, self.skinHash, self.bone, self.boneHash, self.texHash, ffdAnimationHash);
+      let { bone, slot, boneHash, slotHash, skinHash, texHash } = self;
+      // 动态情况缓存当前帧，为多个实例节省计算
+      let dynamicKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName;
+      let dynamicCache = SHARE_CACHE[dynamicKey];
+      if(self.props.share && dynamicCache && dynamicCache.currentTime === a.currentTime) {
+        bone = dynamicCache.bone;
+        slot = dynamicCache.slot;
+        skinHash = dynamicCache.skinHash;
+      }
+      else {
+        let offset = Math.min(1, a.currentTime / a.duration);
+        util.animateBoneMatrix(boneAnimationList, offset, boneHash);
+        util.mergeBoneMatrix(bone[0]);
+        util.animateSlot(slotAnimationList, offset, slotHash);
+        util.calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash);
+        SHARE_CACHE[dynamicKey] = {
+          bone,
+          slot,
+          skinHash,
+          currentTime: a.currentTime,
+        };
+      }
       if(renderMode === karas.mode.CANVAS) {
         let { matrixEvent, computedStyle } = self.shadowRoot;
         // 先在dom中居中
@@ -153,25 +173,25 @@ class Dragonbones extends karas.Component {
           }
         }
         matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
-        render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+        render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash);
         // debug模式
         if(self.props.debug) {
-          render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
-          render.canvasBone(ctx, matrixEvent, self.bone[0]);
+          render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+          render.canvasBone(ctx, matrixEvent, bone[0]);
         }
         else {
           if(self.props.debugBone) {
-            render.canvasBone(ctx, matrixEvent, self.bone[0]);
+            render.canvasBone(ctx, matrixEvent, bone[0]);
           }
           if(self.props.debugSlot) {
-            render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+            render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
           }
         }
         // 静态帧优化将离屏内容绘入
         if(self.staticCacheFlag) {
           offScreen.draw(ctx);
           sourceCtx.drawImage(offScreen.canvas, 0, 0);
-          self.staticCacheHash[key] = ctx.getImageData(0, 0, width, height);
+          self.staticCacheHash[staticKey] = ctx.getImageData(0, 0, width, height);
           ctx.clearRect(0, 0, width, height);
         }
       }
@@ -209,5 +229,7 @@ class Dragonbones extends karas.Component {
     </div>;
   }
 }
+
+Dragonbones.version = version;
 
 export default Dragonbones;

@@ -847,8 +847,7 @@
   function animateBoneMatrix(animationList, offset, boneHash) {
     animationList.forEach(function (item) {
       var name = item.name,
-          list = item.list,
-          easingFn = item.easingFn;
+          list = item.list;
       var bone = boneHash[name]; // 先以静态变换样式为基础
 
       var _bone$transform = bone.transform,
@@ -1423,7 +1422,10 @@
     canvasBone: canvasBone
   };
 
+  var version = "0.3.0";
+
   var uuid = 0;
+  var SHARE_CACHE = {};
 
   var Dragonbones = /*#__PURE__*/function (_karas$Component) {
     _inherits(Dragonbones, _karas$Component);
@@ -1556,7 +1558,7 @@
           // 开启了静态帧优化优先使用缓存
           var offScreen;
           var sourceCtx;
-          var key;
+          var staticKey;
 
           if (self.staticCacheFlag) {
             offScreen = karas.inject.getCacheCanvas(width, height);
@@ -1564,8 +1566,8 @@
             ctx = offScreen.ctx;
             var frame = Math.floor(a.currentTime * (self.fps || 60) / 1000); // ske文件uuid + 骨架名 + 动画名 + 帧数
 
-            key = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
-            var cache = self.staticCacheHash[key];
+            staticKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
+            var cache = self.staticCacheHash[staticKey];
 
             if (cache) {
               ctx.putImageData(cache, 0, 0);
@@ -1576,11 +1578,33 @@
             }
           }
 
-          var offset = Math.min(1, a.currentTime / a.duration);
-          util.animateBoneMatrix(boneAnimationList, offset, self.boneHash);
-          util.mergeBoneMatrix(self.bone[0]);
-          util.animateSlot(slotAnimationList, offset, self.slotHash);
-          util.calSlot(offset, self.slot, self.skinHash, self.bone, self.boneHash, self.texHash, ffdAnimationHash);
+          var bone = self.bone,
+              slot = self.slot,
+              boneHash = self.boneHash,
+              slotHash = self.slotHash,
+              skinHash = self.skinHash,
+              texHash = self.texHash; // 动态情况缓存当前帧，为多个实例节省计算
+
+          var dynamicKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName;
+          var dynamicCache = SHARE_CACHE[dynamicKey];
+
+          if (self.props.share && dynamicCache && dynamicCache.currentTime === a.currentTime) {
+            bone = dynamicCache.bone;
+            slot = dynamicCache.slot;
+            skinHash = dynamicCache.skinHash;
+          } else {
+            var offset = Math.min(1, a.currentTime / a.duration);
+            util.animateBoneMatrix(boneAnimationList, offset, boneHash);
+            util.mergeBoneMatrix(bone[0]);
+            util.animateSlot(slotAnimationList, offset, slotHash);
+            util.calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHash);
+            SHARE_CACHE[dynamicKey] = {
+              bone: bone,
+              slot: slot,
+              skinHash: skinHash,
+              currentTime: a.currentTime
+            };
+          }
 
           if (renderMode === karas.mode.CANVAS) {
             var _self$shadowRoot = self.shadowRoot,
@@ -1608,18 +1632,18 @@
             }
 
             matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
-            render.canvasSlot(ctx, matrixEvent, self.slot, self.skinHash, self.texHash); // debug模式
+            render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash); // debug模式
 
             if (self.props.debug) {
-              render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
-              render.canvasBone(ctx, matrixEvent, self.bone[0]);
+              render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+              render.canvasBone(ctx, matrixEvent, bone[0]);
             } else {
               if (self.props.debugBone) {
-                render.canvasBone(ctx, matrixEvent, self.bone[0]);
+                render.canvasBone(ctx, matrixEvent, bone[0]);
               }
 
               if (self.props.debugSlot) {
-                render.canvasTriangle(ctx, matrixEvent, self.slot, self.skinHash, self.texHash);
+                render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
               }
             } // 静态帧优化将离屏内容绘入
 
@@ -1627,7 +1651,7 @@
             if (self.staticCacheFlag) {
               offScreen.draw(ctx);
               sourceCtx.drawImage(offScreen.canvas, 0, 0);
-              self.staticCacheHash[key] = ctx.getImageData(0, 0, width, height);
+              self.staticCacheHash[staticKey] = ctx.getImageData(0, 0, width, height);
               ctx.clearRect(0, 0, width, height);
             }
           }
@@ -1674,6 +1698,8 @@
 
     return Dragonbones;
   }(karas.Component);
+
+  Dragonbones.version = version;
 
   return Dragonbones;
 

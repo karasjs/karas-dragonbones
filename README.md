@@ -21,6 +21,7 @@ karas.render(
       staticCache={false} //可选开启静态帧优化，每帧渲染后缓存，默认false
       playbackRate={1} // 可选播放速度，默认1
       fps={60} // 可选播放fps，默认60
+      share={false} // 可选共享计算，当同一动画同时出现多个实例时，可省略计算副本，默认false
       debug={false} //可选展示调试绘制，默认false
       debugBone={false} //可选展示调试绘制骨骼，默认false
       debugSlot={false} //可选展示调试绘制插槽，默认false

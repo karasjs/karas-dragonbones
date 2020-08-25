@@ -14,11 +14,11 @@ export default [{
     },
   },
   plugins: [
+    json(),
     csx(),
     babel({
       exclude: 'node_modules/**', // 只编译我们的源代码
       runtimeHelpers: true
     }),
-    json(),
   ],
 }];
