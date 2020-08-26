@@ -22,6 +22,7 @@ karas.render(
       playbackRate={1} // 可选播放速度，默认1
       fps={60} // 可选播放fps，默认60
       share={false} // 可选共享计算，当同一动画同时出现多个实例时，可省略计算副本，默认false
+      loadJson={Function} //如果ske或tex传入的是url需加载，则可覆盖默认的加载方法，2个参数分别为url和callback(json)
       debug={false} //可选展示调试绘制，默认false
       debugBone={false} //可选展示调试绘制骨骼，默认false
       debugSlot={false} //可选展示调试绘制插槽，默认false

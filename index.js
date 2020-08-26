@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.3.2";
+  var version = "0.4.0";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1441,13 +1441,85 @@
     _createClass(Dragonbones, [{
       key: "componentDidMount",
       value: function componentDidMount() {
+        this.init();
+      }
+    }, {
+      key: "shouldComponentUpdate",
+      value: function shouldComponentUpdate(nextProps) {
+        var props = this.props;
+
+        if (nextProps !== props) {
+          if (nextProps.ske !== props.ske || nextProps.tex !== props.tex || nextProps.enlarge !== props.enlarge || nextProps.enlargeSlot !== props.enlargeSlot && !karas.util.equal(nextProps.enlargeSlot, props.enlargeSlot)) {
+            this.init();
+          } else {
+            if (nextProps.armature !== props.armature) {
+              this.armature(nextProps.armature, props);
+            } else {
+              if (nextProps.action !== props.action) {
+                this.action(nextProps.action);
+              }
+
+              if (nextProps.imagePath !== props.imagePath) {
+                this.changeImage(nextProps.imagePath);
+              }
+
+              if (nextProps.playbackRate !== props.playbackRate && this.animation) {
+                this.animation.playbackRate = nextProps.playbackRate;
+              }
+
+              if (nextProps.fps !== props.fps && this.animation) {
+                this.animation.fps = nextProps.fps;
+              }
+            }
+          }
+        }
+
+        return false;
+      }
+    }, {
+      key: "init",
+      value: function init() {
         var _this = this;
+
+        var props = this.props;
+        var ske = props.ske,
+            tex = props.tex;
+        var total = 0;
+
+        if (karas.util.isString(ske)) {
+          total++;
+          props.loadJson(ske, function (res) {
+            total--;
+            ske = res;
+
+            _this.build(total, ske, tex);
+          });
+        }
+
+        if (karas.util.isString(tex)) {
+          total++;
+          props.loadJson(tex, function (res) {
+            total--;
+            tex = res;
+
+            _this.build(total, ske, tex);
+          });
+        }
+
+        this.build(total, ske, tex);
+      }
+    }, {
+      key: "build",
+      value: function build(count, ske, tex) {
+        var _this2 = this;
+
+        if (count !== 0) {
+          return;
+        }
 
         var props = this.props;
         this.staticCacheFlag = !!props.staticCache;
         this.staticCacheHash = {};
-        var ske = props.ske,
-            tex = props.tex;
         ske.uuid = ske.uuid || ++uuid;
 
         if (ske.version !== '5.5') {
@@ -1457,9 +1529,9 @@
         this.ske = karas.util.clone(ske);
         this.tex = karas.util.clone(tex);
         parser.parseAndLoadTex(this.tex, function (texHash) {
-          _this.texHash = texHash;
+          _this2.texHash = texHash;
 
-          _this.armature(props.armature, props);
+          _this2.armature(props.armature, props);
         }, props);
       }
     }, {

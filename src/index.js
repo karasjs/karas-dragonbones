@@ -10,10 +10,72 @@ const SHARE_CACHE = {};
 
 class Dragonbones extends karas.Component {
   componentDidMount() {
+    this.init();
+  }
+
+  shouldComponentUpdate(nextProps) {
+    let props = this.props;
+    if(nextProps !== props) {
+      if(nextProps.ske !== props.ske
+        || nextProps.tex !== props.tex
+        || nextProps.enlarge !== props.enlarge
+        || nextProps.enlargeSlot !== props.enlargeSlot
+          && !karas.util.equal(nextProps.enlargeSlot, props.enlargeSlot)) {
+        this.init();
+      }
+      else {
+        if(nextProps.armature !== props.armature) {
+          this.armature(nextProps.armature, props);
+        }
+        else {
+          if(nextProps.action !== props.action) {
+            this.action(nextProps.action);
+          }
+          if(nextProps.imagePath !== props.imagePath) {
+            this.changeImage(nextProps.imagePath);
+          }
+          if(nextProps.playbackRate !== props.playbackRate && this.animation) {
+            this.animation.playbackRate = nextProps.playbackRate;
+          }
+          if(nextProps.fps !== props.fps && this.animation) {
+            this.animation.fps = nextProps.fps;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  init() {
+    let props = this.props;
+    let { ske, tex } = props;
+    let total = 0;
+    if(karas.util.isString(ske)) {
+      total++;
+      props.loadJson(ske, (res) => {
+        total--;
+        ske = res;
+        this.build(total, ske, tex);
+      });
+    }
+    if(karas.util.isString(tex)) {
+      total++;
+      props.loadJson(tex, (res) => {
+        total--;
+        tex = res;
+        this.build(total, ske, tex);
+      });
+    }
+    this.build(total, ske, tex);
+  }
+
+  build(count, ske, tex) {
+    if(count !== 0) {
+      return;
+    }
     let props = this.props;
     this.staticCacheFlag = !!props.staticCache;
     this.staticCacheHash = {};
-    let { ske, tex } = props;
     ske.uuid = ske.uuid || ++uuid;
     if(ske.version !== '5.5') {
       throw new Error('The version' + ske.version + ' does not match 5.5');
