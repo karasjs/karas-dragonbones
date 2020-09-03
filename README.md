@@ -9,8 +9,8 @@ karas.render(
   <canvas width="720" height="720">
     <Dragonbones
       ref="db"
-      ske={ske} // 骨骼描述json
-      tex={tex} // 骨骼纹理json
+      ske={ske} // 骨骼描述json，也可以是url，需提供loadJson
+      tex={tex} // 骨骼纹理json，也可以是url，需提供loadJson
       imagePath={'url'} // 可选皮肤url，默认tex中指定
       armature={'name'} // 可选默认骨架名称name，默认ske中第一个
       action={'name'} // 可选播放动作名称name，默认ske中指定

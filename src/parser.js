@@ -489,7 +489,7 @@ function parseAnimation(data, frameRate, boneHash) {
         frame.forEach(frame => {
           let { vertices, duration: d = 1, offset: os } = frame;
           frame.easingFn = getEasing(frame);
-          if(os) {
+          if(vertices) {
             for(let i = 0; i < os; i++) {
               vertices.unshift(0);
             }

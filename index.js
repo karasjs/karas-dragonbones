@@ -785,7 +785,7 @@
                 os = frame.offset;
             frame.easingFn = getEasing(frame);
 
-            if (os) {
+            if (vertices) {
               for (var i = 0; i < os; i++) {
                 vertices.unshift(0);
               }
@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.4.0";
+  var version = "0.4.1";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1759,12 +1759,12 @@
     }, {
       key: "render",
       value: function render() {
-        return karas.createVd("div", {}, [karas.createGm("$line", {
-          "ref": "fake",
-          "style": {
+        return karas.createElement("div", null, karas.createElement("$line", {
+          ref: "fake",
+          style: {
             display: 'none'
           }
-        })]);
+        }));
       }
     }]);
 
