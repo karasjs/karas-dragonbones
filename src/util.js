@@ -206,7 +206,6 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
             }
           });
           item.matrix = m;
-          // item.coords = math.geom.transformPoint(m, 0, 0);
         }
         // 没有绑定认为直属父骨骼
         else {
@@ -214,7 +213,6 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
           let offsetMatrix = [1, 0, 0, 1, item.x, item.y];
           let m = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
           item.matrix = m;
-          // item.coords = math.geom.transformPoint(m, 0, 0);
         }
         // 每次先清空ffd自由变换的数据
         item.matrixF = null;
@@ -293,7 +291,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         let target = [];
         indexList.forEach(i => {
           let vertices = verticesList[i];
-          let coords = math.geom.transformPoint(vertices.matrixF || vertices.matrix, 0, 0);
+          let coords = math.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
           target = target.concat(coords);
         });
         // 先交换确保3个点顺序

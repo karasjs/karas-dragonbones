@@ -420,15 +420,15 @@
                       coords = _bonePoseHash$index.coords,
                       pose = _bonePoseHash$index.pose; // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
 
-                  var _math$matrix$calPoint = math.matrix.calPoint([0, 0], pose),
-                      _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
-                      x0 = _math$matrix$calPoint2[0],
-                      y0 = _math$matrix$calPoint2[1];
+                  var _math$matrix$calPoint7 = math.matrix.calPoint([0, 0], pose),
+                      _math$matrix$calPoint8 = _slicedToArray(_math$matrix$calPoint7, 2),
+                      x0 = _math$matrix$calPoint8[0],
+                      y0 = _math$matrix$calPoint8[1];
 
-                  var _math$matrix$calPoint3 = math.matrix.calPoint([1, 0], pose),
-                      _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
-                      x1 = _math$matrix$calPoint4[0],
-                      y1 = _math$matrix$calPoint4[1];
+                  var _math$matrix$calPoint9 = math.matrix.calPoint([1, 0], pose),
+                      _math$matrix$calPoint10 = _slicedToArray(_math$matrix$calPoint9, 2),
+                      x1 = _math$matrix$calPoint10[0],
+                      y1 = _math$matrix$calPoint10[1];
 
                   var dx = x1 - x0;
                   var dy = y1 - y0;
@@ -521,20 +521,20 @@
               t[5] = y0;
               m = math.matrix.multiply(t, m); // 获取扩展后的三角形顶点坐标
 
-              var _math$geom$transformP = math.geom.transformPoint(m, x1, y1),
-                  _math$geom$transformP2 = _slicedToArray(_math$geom$transformP, 2),
-                  sx1 = _math$geom$transformP2[0],
-                  sy1 = _math$geom$transformP2[1];
+              var _math$matrix$calPoint = math.matrix.calPoint([x1, y1], m),
+                  _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
+                  sx1 = _math$matrix$calPoint2[0],
+                  sy1 = _math$matrix$calPoint2[1];
 
-              var _math$geom$transformP3 = math.geom.transformPoint(m, x2, y2),
-                  _math$geom$transformP4 = _slicedToArray(_math$geom$transformP3, 2),
-                  sx2 = _math$geom$transformP4[0],
-                  sy2 = _math$geom$transformP4[1];
+              var _math$matrix$calPoint3 = math.matrix.calPoint([x2, y2], m),
+                  _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
+                  sx2 = _math$matrix$calPoint4[0],
+                  sy2 = _math$matrix$calPoint4[1];
 
-              var _math$geom$transformP5 = math.geom.transformPoint(m, x3, y3),
-                  _math$geom$transformP6 = _slicedToArray(_math$geom$transformP5, 2),
-                  sx3 = _math$geom$transformP6[0],
-                  sy3 = _math$geom$transformP6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
+              var _math$matrix$calPoint5 = math.matrix.calPoint([x3, y3], m),
+                  _math$matrix$calPoint6 = _slicedToArray(_math$matrix$calPoint5, 2),
+                  sx3 = _math$matrix$calPoint6[0],
+                  sy3 = _math$matrix$calPoint6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
               // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
 
 
@@ -1066,7 +1066,7 @@
                 m[i] += offset[i] * value;
               }
             });
-            item.matrix = m; // item.coords = math.geom.transformPoint(m, 0, 0);
+            item.matrix = m;
           } // 没有绑定认为直属父骨骼
           else {
               var parentBoneMatrix = boneHash[parent].currentMatrix;
@@ -1074,7 +1074,7 @@
 
               var _m3 = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
 
-              item.matrix = _m3; // item.coords = math.geom.transformPoint(m, 0, 0);
+              item.matrix = _m3;
             } // 每次先清空ffd自由变换的数据
 
 
@@ -1172,7 +1172,7 @@
           var target = [];
           indexList.forEach(function (i) {
             var vertices = verticesList[i];
-            var coords = math$1.geom.transformPoint(vertices.matrixF || vertices.matrix, 0, 0);
+            var coords = math$1.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
             target = target.concat(coords);
           }); // 先交换确保3个点顺序
 
@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.4.1";
+  var version = "0.4.2";
 
   var uuid = 0;
   var SHARE_CACHE = {};

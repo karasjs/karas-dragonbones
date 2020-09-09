@@ -261,9 +261,9 @@ function parseSkin(data, texHash, props) {
           t[5] = y0;
           m = math.matrix.multiply(t, m);
           // 获取扩展后的三角形顶点坐标
-          let [sx1, sy1] = math.geom.transformPoint(m, x1, y1);
-          let [sx2, sy2] = math.geom.transformPoint(m, x2, y2);
-          let [sx3, sy3] = math.geom.transformPoint(m, x3, y3);
+          let [sx1, sy1] = math.matrix.calPoint([x1, y1], m);
+          let [sx2, sy2] = math.matrix.calPoint([x2, y2], m);
+          let [sx3, sy3] = math.matrix.calPoint([x3, y3], m);
           // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
           // let [ox, oy, ow, oh] = triangleOriginCoords(sx1, sy1, sx2, sy2, sx3, sy3);
           triangleList.push({
