@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.4.2";
+  var version = "0.5.0";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1626,7 +1626,7 @@
         var width = root.width;
         var height = root.height;
 
-        fake.render = function (renderMode, ctx, defs) {
+        fake.render = function (renderMode, lv, ctx, defs) {
           // 开启了静态帧优化优先使用缓存
           var offScreen;
           var sourceCtx;

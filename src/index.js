@@ -169,7 +169,7 @@ class Dragonbones extends karas.Component {
     let root = self.root;
     let width = root.width;
     let height = root.height;
-    fake.render = function(renderMode, ctx, defs) {
+    fake.render = function(renderMode, lv, ctx, defs) {
       // 开启了静态帧优化优先使用缓存
       let offScreen;
       let sourceCtx;
