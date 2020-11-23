@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.5.0";
+  var version = "0.5.2";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1622,12 +1622,17 @@
         }], options); // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
 
         var self = this;
+        var computedStyle = self.shadowRoot.computedStyle;
         var root = self.root;
         var width = root.width;
         var height = root.height;
 
         fake.render = function (renderMode, lv, ctx, defs) {
-          // 开启了静态帧优化优先使用缓存
+          if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+            return;
+          } // 开启了静态帧优化优先使用缓存
+
+
           var offScreen;
           var sourceCtx;
           var staticKey;
@@ -1681,10 +1686,10 @@
           if (renderMode === karas.mode.CANVAS) {
             var _self$shadowRoot = self.shadowRoot,
                 matrixEvent = _self$shadowRoot.matrixEvent,
-                computedStyle = _self$shadowRoot.computedStyle; // 先在dom中居中
+                _computedStyle = _self$shadowRoot.computedStyle; // 先在dom中居中
 
-            var left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
-            var top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
+            var left = _computedStyle.marginLeft + _computedStyle.borderLeftWidth + _computedStyle.width * 0.5;
+            var top = _computedStyle.marginTop + _computedStyle.borderTopWidth + _computedStyle.height * 0.5;
             var t = karas.math.matrix.identity();
             t[4] = left;
             t[5] = top; // 画布居中
@@ -1696,8 +1701,8 @@
               t[5] -= dy * 0.5; // 适配尺寸
 
               if (self.props.fitSize) {
-                var sx = computedStyle.width / self.canvas.width;
-                var sy = computedStyle.height / self.canvas.height;
+                var sx = _computedStyle.width / self.canvas.width;
+                var sy = _computedStyle.height / self.canvas.height;
                 t[0] = sx;
                 t[3] = sy;
               }
@@ -1759,7 +1764,7 @@
     }, {
       key: "render",
       value: function render() {
-        return karas.createElement("div", null, karas.createElement("$line", {
+        return karas.createElement("div", null, karas.createElement("span", {
           ref: "fake",
           style: {
             display: 'none'

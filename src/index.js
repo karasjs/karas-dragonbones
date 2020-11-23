@@ -166,10 +166,14 @@ class Dragonbones extends karas.Component {
     ], options);
     // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
     let self = this;
+    let computedStyle = self.shadowRoot.computedStyle;
     let root = self.root;
     let width = root.width;
     let height = root.height;
     fake.render = function(renderMode, lv, ctx, defs) {
+      if(computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+        return;
+      }
       // 开启了静态帧优化优先使用缓存
       let offScreen;
       let sourceCtx;
@@ -285,7 +289,7 @@ class Dragonbones extends karas.Component {
 
   render() {
     return <div>
-      <$line ref="fake" style={{
+      <span ref="fake" style={{
         display: 'none',
       }}/>
     </div>;
