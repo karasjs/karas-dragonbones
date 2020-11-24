@@ -1422,7 +1422,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.5.2";
+  var version = "0.5.3";
 
   var uuid = 0;
   var SHARE_CACHE = {};
