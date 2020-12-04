@@ -7,6 +7,19 @@ import { version } from '../package.json';
 let uuid = 0;
 
 const SHARE_CACHE = {};
+const { STYLE_KEY: {
+  DISPLAY,
+  VISIBILITY,
+  OPACITY,
+  MARGIN_LEFT,
+  PADDING_LEFT,
+  BORDER_LEFT_WIDTH,
+  MARGIN_TOP,
+  PADDING_TOP,
+  BORDER_TOP_WIDTH,
+  WIDTH,
+  HEIGHT,
+} } = karas.enums;
 
 class Dragonbones extends karas.Component {
   componentDidMount() {
@@ -158,10 +171,10 @@ class Dragonbones extends karas.Component {
     fake.clearAnimate();
     let a = this.animation = fake.animate([
       {
-        opacity: 0,
+        backgroundColor: '#000',
       },
       {
-        opacity: 1,
+        backgroundColor: '#FFF',
       }
     ], options);
     // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
@@ -171,7 +184,9 @@ class Dragonbones extends karas.Component {
     let width = root.width;
     let height = root.height;
     fake.render = function(renderMode, lv, ctx, defs) {
-      if(computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+      if(computedStyle[DISPLAY] === 'none'
+        || computedStyle[VISIBILITY] === 'hidden'
+        || computedStyle[OPACITY] === 0) {
         return;
       }
       // 开启了静态帧优化优先使用缓存
@@ -217,10 +232,10 @@ class Dragonbones extends karas.Component {
         };
       }
       if(renderMode === karas.mode.CANVAS) {
-        let { matrixEvent, computedStyle } = self.shadowRoot;
+        let { matrixEvent } = self.shadowRoot;
         // 先在dom中居中
-        let left = computedStyle.marginLeft + computedStyle.borderLeftWidth + computedStyle.width * 0.5;
-        let top = computedStyle.marginTop + computedStyle.borderTopWidth + computedStyle.height * 0.5;
+        let left = computedStyle[MARGIN_LEFT] + computedStyle[BORDER_LEFT_WIDTH] + computedStyle[PADDING_LEFT] + computedStyle[WIDTH] * 0.5;
+        let top = computedStyle[MARGIN_TOP] + computedStyle[BORDER_TOP_WIDTH] + computedStyle[PADDING_TOP] + computedStyle[HEIGHT] * 0.5;
         let t = karas.math.matrix.identity();
         t[4] = left;
         t[5] = top;
@@ -289,9 +304,7 @@ class Dragonbones extends karas.Component {
 
   render() {
     return <div>
-      <span ref="fake" style={{
-        display: 'none',
-      }}/>
+      <$polyline ref="fake"/>
     </div>;
   }
 }

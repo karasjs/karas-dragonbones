@@ -1422,10 +1422,22 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.5.3";
+  var version = "0.5.4";
 
   var uuid = 0;
   var SHARE_CACHE = {};
+  var _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
+      DISPLAY = _karas$enums$STYLE_KE.DISPLAY,
+      VISIBILITY = _karas$enums$STYLE_KE.VISIBILITY,
+      OPACITY = _karas$enums$STYLE_KE.OPACITY,
+      MARGIN_LEFT = _karas$enums$STYLE_KE.MARGIN_LEFT,
+      PADDING_LEFT = _karas$enums$STYLE_KE.PADDING_LEFT,
+      BORDER_LEFT_WIDTH = _karas$enums$STYLE_KE.BORDER_LEFT_WIDTH,
+      MARGIN_TOP = _karas$enums$STYLE_KE.MARGIN_TOP,
+      PADDING_TOP = _karas$enums$STYLE_KE.PADDING_TOP,
+      BORDER_TOP_WIDTH = _karas$enums$STYLE_KE.BORDER_TOP_WIDTH,
+      WIDTH = _karas$enums$STYLE_KE.WIDTH,
+      HEIGHT = _karas$enums$STYLE_KE.HEIGHT;
 
   var Dragonbones = /*#__PURE__*/function (_karas$Component) {
     _inherits(Dragonbones, _karas$Component);
@@ -1616,9 +1628,9 @@
         var fake = this.ref.fake;
         fake.clearAnimate();
         var a = this.animation = fake.animate([{
-          opacity: 0
+          backgroundColor: '#000'
         }, {
-          opacity: 1
+          backgroundColor: '#FFF'
         }], options); // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
 
         var self = this;
@@ -1628,7 +1640,7 @@
         var height = root.height;
 
         fake.render = function (renderMode, lv, ctx, defs) {
-          if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+          if (computedStyle[DISPLAY] === 'none' || computedStyle[VISIBILITY] === 'hidden' || computedStyle[OPACITY] === 0) {
             return;
           } // 开启了静态帧优化优先使用缓存
 
@@ -1684,12 +1696,10 @@
           }
 
           if (renderMode === karas.mode.CANVAS) {
-            var _self$shadowRoot = self.shadowRoot,
-                matrixEvent = _self$shadowRoot.matrixEvent,
-                _computedStyle = _self$shadowRoot.computedStyle; // 先在dom中居中
+            var matrixEvent = self.shadowRoot.matrixEvent; // 先在dom中居中
 
-            var left = _computedStyle.marginLeft + _computedStyle.borderLeftWidth + _computedStyle.width * 0.5;
-            var top = _computedStyle.marginTop + _computedStyle.borderTopWidth + _computedStyle.height * 0.5;
+            var left = computedStyle[MARGIN_LEFT] + computedStyle[BORDER_LEFT_WIDTH] + computedStyle[PADDING_LEFT] + computedStyle[WIDTH] * 0.5;
+            var top = computedStyle[MARGIN_TOP] + computedStyle[BORDER_TOP_WIDTH] + computedStyle[PADDING_TOP] + computedStyle[HEIGHT] * 0.5;
             var t = karas.math.matrix.identity();
             t[4] = left;
             t[5] = top; // 画布居中
@@ -1701,8 +1711,8 @@
               t[5] -= dy * 0.5; // 适配尺寸
 
               if (self.props.fitSize) {
-                var sx = _computedStyle.width / self.canvas.width;
-                var sy = _computedStyle.height / self.canvas.height;
+                var sx = computedStyle.width / self.canvas.width;
+                var sy = computedStyle.height / self.canvas.height;
                 t[0] = sx;
                 t[3] = sy;
               }
@@ -1764,11 +1774,8 @@
     }, {
       key: "render",
       value: function render() {
-        return karas.createElement("div", null, karas.createElement("span", {
-          ref: "fake",
-          style: {
-            display: 'none'
-          }
+        return karas.createElement("div", null, karas.createElement("$polyline", {
+          ref: "fake"
         }));
       }
     }]);
