@@ -175,7 +175,7 @@ class Dragonbones extends karas.Component {
       },
       {
         backgroundColor: '#FFF',
-      }
+      },
     ], options);
     // 劫持隐藏节点渲染，因本身display:none可以不执行原本逻辑，计算并渲染骨骼动画
     let self = this;

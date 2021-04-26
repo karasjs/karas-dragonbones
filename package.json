@@ -1,6 +1,6 @@
 {
   "name": "karas-dragonbones",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Dragonbones component for karas.",
   "maintainers": [
     {
@@ -17,7 +17,7 @@
     "url": "git://github.com/karasjs/karas-dragonbones.git"
   },
   "peerDependencies": {
-    "karas": "^0.46.5"
+    "karas": "^0.57.9"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",
