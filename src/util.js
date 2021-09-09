@@ -23,6 +23,9 @@ function animateBoneMatrix(animationList, offset, boneHash) {
     // 再assign动画中的变换样式
     list.forEach(frames => {
       let len = frames.length;
+      if(!len) {
+        return;
+      }
       let type = frames[0].type;
       let i = binarySearch(0, len - 1, offset, frames);
       let current = frames[i];
@@ -141,29 +144,33 @@ function animateSlot(slotAnimationList, offset, slotHash) {
     let { name, displayFrame, colorFrame } = item;
     let slot = slotHash[name];
     if(displayFrame) {
-      let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
-      let { value = 0 } = displayFrame[i];
-      slot.displayIndexA = value;
+      if(displayFrame.length) {
+        let i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+        let { value = 0 } = displayFrame[i];
+        slot.displayIndexA = value;
+      }
     }
     if(colorFrame) {
       let len = colorFrame.length;
-      let i = binarySearch(0, len - 1, offset, colorFrame);
-      let current = colorFrame[i];
-      let easingFn = current.easing;
-      // 是否最后一帧
-      if(i === len - 1) {
-        slot.colorA = current.value;
-      }
-      else {
-        let next = colorFrame[i + 1];
-        let total = next.offset - current.offset;
-        let percent = (offset - current.offset) / total;
-        if(easingFn) {
-          percent = easingFn(percent);
+      if(len) {
+        let i = binarySearch(0, len - 1, offset, colorFrame);
+        let current = colorFrame[i];
+        let easingFn = current.easing;
+        // 是否最后一帧
+        if(i === len - 1) {
+          slot.colorA = current.value;
         }
-        slot.colorA = {
-          aM: current.value.aM + current.da * percent,
-        };
+        else {
+          let next = colorFrame[i + 1];
+          let total = next.offset - current.offset;
+          let percent = (offset - current.offset) / total;
+          if(easingFn) {
+            percent = easingFn(percent);
+          }
+          slot.colorA = {
+            aM: current.value.aM + current.da * percent,
+          };
+        }
       }
     }
   });
