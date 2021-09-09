@@ -237,20 +237,20 @@ class Dragonbones extends karas.Component {
         let left = computedStyle[MARGIN_LEFT] + computedStyle[BORDER_LEFT_WIDTH] + computedStyle[PADDING_LEFT] + computedStyle[WIDTH] * 0.5;
         let top = computedStyle[MARGIN_TOP] + computedStyle[BORDER_TOP_WIDTH] + computedStyle[PADDING_TOP] + computedStyle[HEIGHT] * 0.5;
         let t = karas.math.matrix.identity();
-        t[4] = left;
-        t[5] = top;
+        t[12] = left;
+        t[13] = top;
         // 画布居中
         if(self.canvas) {
           let dx = self.canvas.x || 0;
           let dy = self.canvas.y || 0;
-          t[4] -= dx * 0.5;
-          t[5] -= dy * 0.5;
+          t[12] -= dx * 0.5;
+          t[13] -= dy * 0.5;
           // 适配尺寸
           if(self.props.fitSize) {
             let sx = computedStyle.width / self.canvas.width;
             let sy = computedStyle.height / self.canvas.height;
             t[0] = sx;
-            t[3] = sy;
+            t[5] = sy;
           }
         }
         matrixEvent = karas.math.matrix.multiply(matrixEvent, t);

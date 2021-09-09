@@ -98,20 +98,20 @@ function parseBone(data) {
     item.children = [];
     item.index = i;
     // 静态变换样式，可能某个骨骼没动画
-    let matrix = [1, 0, 0, 1, 0, 0];
+    let matrix = math.matrix.identity();
     if(transform.x || transform.y) {
-      let m = [1, 0, 0, 1, transform.x || 0, transform.y || 0];
+      let m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, transform.x || 0, transform.y || 0, 0, 1];
       matrix = math.matrix.multiply(matrix, m);
     }
     if(transform.skX) {
       let d = math.geom.d2r(transform.skX);
       let sin = Math.sin(d);
       let cos = Math.cos(d);
-      let m = [cos, sin, -sin, cos, 0, 0];
+      let m = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
       matrix = math.matrix.multiply(matrix, m);
     }
     if(transform.scX !== undefined || transform.scY !== undefined) {
-      let m = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+      let m = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
       matrix = karas.math.matrix.multiply(matrix, m);
     }
     item.matrix = matrix;
@@ -154,7 +154,8 @@ function parseSkin(data, texHash, props) {
           bonePoseHash = {};
           for(let i = 0, len = bonePose.length; i < len; i += 7) {
             let index = bonePose[i];
-            let matrix = bonePose.slice(i + 1, i + 7);
+            let m = bonePose.slice(i + 1, i + 7);
+            let matrix = [m[0], m[1], 0, 0, m[2], m[3], 0, 0, 0, 0, 1, 0, m[4], m[5], 0, 1];
             let coords = math.matrix.calPoint([0, 0], matrix);
             bonePoseHash[index] = {
               coords,
@@ -200,8 +201,8 @@ function parseSkin(data, texHash, props) {
               else {
                 theta = Math.atan(Math.abs(dy / dx));
               }
-              let rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
-              let translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
+              let rotate = [Math.cos(theta), Math.sin(theta), 0, 0, -Math.sin(theta), Math.cos(theta), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+              let translate = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x - coords[0], y - coords[1], 0, 1];
               let matrix = math.matrix.multiply(rotate, translate);
               res.weightList.push({
                 index,
@@ -250,15 +251,15 @@ function parseSkin(data, texHash, props) {
           let scale = px ? triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, px) : 1;
           // 以内心为transformOrigin
           let m = math.matrix.identity();
-          m[4] = -x0;
-          m[5] = -y0;
+          m[12] = -x0;
+          m[13] = -y0;
           // 缩放
           let t = math.matrix.identity();
-          t[0] = t[3] = scale;
+          t[0] = t[5] = scale;
           m = math.matrix.multiply(t, m);
           // 移动回去
-          t[4] = x0;
-          t[5] = y0;
+          t[12] = x0;
+          t[13] = y0;
           m = math.matrix.multiply(t, m);
           // 获取扩展后的三角形顶点坐标
           let [sx1, sy1] = math.matrix.calPoint([x1, y1], m);

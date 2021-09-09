@@ -5,7 +5,7 @@ const { math } = karas;
 function canvasBone(ctx, matrixEvent, bone) {
   let { length, children, currentMatrix } = bone;
   let m = math.matrix.multiply(matrixEvent, currentMatrix);
-  ctx.setTransform(...m);
+  ctx.setTransform(m[0], m[1], m[4], m[5], m[12], m[13]);
   ctx.beginPath();
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 1;
@@ -45,7 +45,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
         matrix = math.matrix.multiply(matrixEvent, matrix);
         // clip绘制
         ctx.save();
-        ctx.setTransform(...matrix);
+        ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.beginPath();
         ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
         ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
@@ -59,13 +59,13 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
     // 默认图片类型
     else {
       let { matrix } = displayTarget;
-      if(matrix[0] === 0 || matrix[3] === 0) {
+      if(matrix[0] === 0 || matrix[5] === 0) {
         return;
       }
       matrix = math.matrix.multiply(matrixEvent, matrix);
       // clip绘制
       ctx.save();
-      ctx.setTransform(...matrix);
+      ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
       ctx.beginPath();
       ctx.moveTo(-tex.frameX, -tex.frameY);
       ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
@@ -100,7 +100,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       triangleList.forEach(item => {
         let { matrix, scaleCoords } = item;
         matrix = math.matrix.multiply(matrixEvent, matrix);
-        ctx.setTransform(...matrix);
+        ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.strokeStyle = '#39F';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -113,7 +113,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       verticesList.forEach(item => {
         let { matrix, matrixF } = item;
         matrix = math.matrix.multiply(matrixEvent, matrixF || matrix);
-        ctx.setTransform(...matrix);
+        ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.fillStyle = '#0D6';
         ctx.beginPath();
         ctx.arc(0, 0, 4, 0, Math.PI * 2);
@@ -126,7 +126,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       let { matrix } = displayTarget;
       matrix = math.matrix.multiply(matrixEvent, matrix);
       ctx.save();
-      ctx.setTransform(...matrix);
+      ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
       ctx.strokeStyle = '#F90';
       ctx.lineWidth = 1;
       ctx.beginPath();
