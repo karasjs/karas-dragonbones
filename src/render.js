@@ -30,6 +30,9 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
     if(blendMode === 'add') {
       ctx.globalCompositeOperation = 'lighter';
     }
+    else {
+      ctx.globalCompositeOperation = 'source-over';
+    }
     let { aM = 100 } = colorA;
     let opacity = ctx.globalAlpha;
     // 透明度

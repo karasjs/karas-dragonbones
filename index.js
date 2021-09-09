@@ -861,6 +861,11 @@
 
       list.forEach(function (frames) {
         var len = frames.length;
+
+        if (!len) {
+          return;
+        }
+
         var type = frames[0].type;
         var i = binarySearch(0, len - 1, offset, frames);
         var current = frames[i];
@@ -986,34 +991,38 @@
       var slot = slotHash[name];
 
       if (displayFrame) {
-        var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
-        var _displayFrame$i$value = displayFrame[i].value,
-            value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
-        slot.displayIndexA = value;
+        if (displayFrame.length) {
+          var i = binarySearch(0, displayFrame.length - 1, offset, displayFrame);
+          var _displayFrame$i$value = displayFrame[i].value,
+              value = _displayFrame$i$value === void 0 ? 0 : _displayFrame$i$value;
+          slot.displayIndexA = value;
+        }
       }
 
       if (colorFrame) {
         var len = colorFrame.length;
 
-        var _i = binarySearch(0, len - 1, offset, colorFrame);
+        if (len) {
+          var _i = binarySearch(0, len - 1, offset, colorFrame);
 
-        var current = colorFrame[_i];
-        var easingFn = current.easing; // 是否最后一帧
+          var current = colorFrame[_i];
+          var easingFn = current.easing; // 是否最后一帧
 
-        if (_i === len - 1) {
-          slot.colorA = current.value;
-        } else {
-          var next = colorFrame[_i + 1];
-          var total = next.offset - current.offset;
-          var percent = (offset - current.offset) / total;
+          if (_i === len - 1) {
+            slot.colorA = current.value;
+          } else {
+            var next = colorFrame[_i + 1];
+            var total = next.offset - current.offset;
+            var percent = (offset - current.offset) / total;
 
-          if (easingFn) {
-            percent = easingFn(percent);
+            if (easingFn) {
+              percent = easingFn(percent);
+            }
+
+            slot.colorA = {
+              aM: current.value.aM + current.da * percent
+            };
           }
-
-          slot.colorA = {
-            aM: current.value.aM + current.da * percent
-          };
         }
       }
     });
@@ -1283,6 +1292,8 @@
 
       if (blendMode === 'add') {
         ctx.globalCompositeOperation = 'lighter';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
       }
 
       var _colorA$aM = colorA.aM,
@@ -1422,7 +1433,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.5.6";
+  var version = "0.5.7";
 
   var uuid = 0;
   var SHARE_CACHE = {};
