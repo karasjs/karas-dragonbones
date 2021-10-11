@@ -299,7 +299,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         indexList.forEach(i => {
           let vertices = verticesList[i];
           let coords = math.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
-          target = target.concat(coords);
+          target = target.concat(coords.slice(0, 2));
         });
         // 先交换确保3个点顺序
         let [source1, target1] = math.tar.exchangeOrder(source, target);
