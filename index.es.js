@@ -1162,7 +1162,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         indexList.forEach(function (i) {
           var vertices = verticesList[i];
           var coords = math$1.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
-          target = target.concat(coords);
+          target = target.concat(coords.slice(0, 2));
         }); // 先交换确保3个点顺序
 
         var _math$tar$exchangeOrd = math$1.tar.exchangeOrder(source, target),
@@ -1413,7 +1413,7 @@ var render = {
   canvasBone: canvasBone
 };
 
-var version = "0.5.7";
+var version = "0.6.0";
 
 var uuid = 0;
 var SHARE_CACHE = {};
