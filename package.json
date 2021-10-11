@@ -1,6 +1,6 @@
 {
   "name": "karas-dragonbones",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "description": "Dragonbones component for karas.",
   "maintainers": [
     {
@@ -10,14 +10,14 @@
   ],
   "scripts": {
     "build": "rollup -c rollup.config.js",
-    "dev": "rollup -c rollup.config.js --watch"
+    "dev": "rollup -c rollup.dev.config.js --watch"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/karasjs/karas-dragonbones.git"
   },
   "peerDependencies": {
-    "karas": "^0.57.9"
+    "karas": "^0.62.4"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",

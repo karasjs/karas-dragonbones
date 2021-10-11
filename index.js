@@ -126,20 +126,8 @@
     return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
   }
 
-  function _toConsumableArray(arr) {
-    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
-  }
-
-  function _arrayWithoutHoles(arr) {
-    if (Array.isArray(arr)) return _arrayLikeToArray(arr);
-  }
-
   function _arrayWithHoles(arr) {
     if (Array.isArray(arr)) return arr;
-  }
-
-  function _iterableToArray(iter) {
-    if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
   }
 
   function _iterableToArrayLimit(arr, i) {
@@ -184,10 +172,6 @@
     for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
 
     return arr2;
-  }
-
-  function _nonIterableSpread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   function _nonIterableRest() {
@@ -314,10 +298,10 @@
       item.children = [];
       item.index = i; // 静态变换样式，可能某个骨骼没动画
 
-      var matrix = [1, 0, 0, 1, 0, 0];
+      var matrix = math.matrix.identity();
 
       if (transform.x || transform.y) {
-        var m = [1, 0, 0, 1, transform.x || 0, transform.y || 0];
+        var m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, transform.x || 0, transform.y || 0, 0, 1];
         matrix = math.matrix.multiply(matrix, m);
       }
 
@@ -325,12 +309,12 @@
         var d = math.geom.d2r(transform.skX);
         var sin = Math.sin(d);
         var cos = Math.cos(d);
-        var _m = [cos, sin, -sin, cos, 0, 0];
+        var _m = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = math.matrix.multiply(matrix, _m);
       }
 
       if (transform.scX !== undefined || transform.scY !== undefined) {
-        var _m2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+        var _m2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = karas.math.matrix.multiply(matrix, _m2);
       }
 
@@ -387,7 +371,8 @@
 
               for (var _i = 0, _len = bonePose.length; _i < _len; _i += 7) {
                 var _index = bonePose[_i];
-                var matrix = bonePose.slice(_i + 1, _i + 7);
+                var m = bonePose.slice(_i + 1, _i + 7);
+                var matrix = [m[0], m[1], 0, 0, m[2], m[3], 0, 0, 0, 0, 1, 0, m[4], m[5], 0, 1];
                 var coords = math.matrix.calPoint([0, 0], matrix);
                 bonePoseHash[_index] = {
                   coords: coords,
@@ -444,8 +429,8 @@
                     theta = Math.atan(Math.abs(dy / dx));
                   }
 
-                  var rotate = [Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0];
-                  var translate = [1, 0, 0, 1, x - coords[0], y - coords[1]];
+                  var rotate = [Math.cos(theta), Math.sin(theta), 0, 0, -Math.sin(theta), Math.cos(theta), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+                  var translate = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x - coords[0], y - coords[1], 0, 1];
                   var matrix = math.matrix.multiply(rotate, translate);
                   res.weightList.push({
                     index: index,
@@ -509,29 +494,30 @@
 
               var scale = px ? triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, px) : 1; // 以内心为transformOrigin
 
-              var m = math.matrix.identity();
-              m[4] = -x0;
-              m[5] = -y0; // 缩放
+              var _m3 = math.matrix.identity();
+
+              _m3[12] = -x0;
+              _m3[13] = -y0; // 缩放
 
               var t = math.matrix.identity();
-              t[0] = t[3] = scale;
-              m = math.matrix.multiply(t, m); // 移动回去
+              t[0] = t[5] = scale;
+              _m3 = math.matrix.multiply(t, _m3); // 移动回去
 
-              t[4] = x0;
-              t[5] = y0;
-              m = math.matrix.multiply(t, m); // 获取扩展后的三角形顶点坐标
+              t[12] = x0;
+              t[13] = y0;
+              _m3 = math.matrix.multiply(t, _m3); // 获取扩展后的三角形顶点坐标
 
-              var _math$matrix$calPoint = math.matrix.calPoint([x1, y1], m),
+              var _math$matrix$calPoint = math.matrix.calPoint([x1, y1], _m3),
                   _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
                   sx1 = _math$matrix$calPoint2[0],
                   sy1 = _math$matrix$calPoint2[1];
 
-              var _math$matrix$calPoint3 = math.matrix.calPoint([x2, y2], m),
+              var _math$matrix$calPoint3 = math.matrix.calPoint([x2, y2], _m3),
                   _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
                   sx2 = _math$matrix$calPoint4[0],
                   sy2 = _math$matrix$calPoint4[1];
 
-              var _math$matrix$calPoint5 = math.matrix.calPoint([x3, y3], m),
+              var _math$matrix$calPoint5 = math.matrix.calPoint([x3, y3], _m3),
                   _math$matrix$calPoint6 = _slicedToArray(_math$matrix$calPoint5, 2),
                   sx3 = _math$matrix$calPoint6[0],
                   sy3 = _math$matrix$calPoint6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
@@ -901,10 +887,10 @@
           }
         }
       });
-      var matrix = [1, 0, 0, 1, 0, 0];
+      var matrix = math$1.matrix.identity();
 
       if (res.translateX || res.translateY) {
-        var m = [1, 0, 0, 1, res.translateX || 0, res.translateY || 0];
+        var m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, res.translateX || 0, res.translateY || 0, 0, 1];
         matrix = math$1.matrix.multiply(matrix, m);
       }
 
@@ -912,12 +898,12 @@
         var d = math$1.geom.d2r(res.rotateZ);
         var sin = Math.sin(d);
         var cos = Math.cos(d);
-        var _m = [cos, sin, -sin, cos, 0, 0];
+        var _m = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = math$1.matrix.multiply(matrix, _m);
       }
 
       if (res.scaleX !== undefined || res.scaleY !== undefined) {
-        var _m2 = [res.scaleX === undefined ? 1 : res.scaleX, 0, 0, res.scaleY === undefined ? 1 : res.scaleY, 0, 0];
+        var _m2 = [res.scaleX === undefined ? 1 : res.scaleX, 0, 0, 0, 0, res.scaleY === undefined ? 1 : res.scaleY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = math$1.matrix.multiply(matrix, _m2);
       }
 
@@ -1063,7 +1049,7 @@
           var weightList = item.weightList; // 有绑定骨骼的mesh，计算权重
 
           if (weightList) {
-            var m = [0, 0, 0, 0, 0, 0];
+            var m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             weightList.forEach(function (weight) {
               var index = weight.index,
                   value = weight.value,
@@ -1071,7 +1057,7 @@
               var boneMatrix = bone[index].currentMatrix;
               var offset = karas.math.matrix.multiply(boneMatrix, matrix);
 
-              for (var i = 0; i < 6; i++) {
+              for (var i = 0; i < 16; i++) {
                 m[i] += offset[i] * value;
               }
             });
@@ -1079,7 +1065,7 @@
           } // 没有绑定认为直属父骨骼
           else {
               var parentBoneMatrix = boneHash[parent].currentMatrix;
-              var offsetMatrix = [1, 0, 0, 1, item.x, item.y];
+              var offsetMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, item.x, item.y, 0, 1];
 
               var _m3 = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
 
@@ -1115,7 +1101,7 @@
 
                   var index = _i2 >> 1;
                   var target = verticesList[index];
-                  var m = [1, 0, 0, 1, x, y];
+                  var m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, 0, 1];
                   target.matrixF = math$1.matrix.multiply(target.matrix, m);
                 }
               }
@@ -1165,7 +1151,7 @@
                   var _index = _i3 >> 1;
 
                   var _target = verticesList[_index];
-                  var _m4 = [1, 0, 0, 1, _x, _y];
+                  var _m4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, _x, _y, 0, 1];
                   _target.matrixF = math$1.matrix.multiply(_target.matrix, _m4);
                 }
               }
@@ -1182,7 +1168,7 @@
           indexList.forEach(function (i) {
             var vertices = verticesList[i];
             var coords = math$1.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
-            target = target.concat(coords);
+            target = target.concat(coords.slice(0, 2));
           }); // 先交换确保3个点顺序
 
           var _math$tar$exchangeOrd = math$1.tar.exchangeOrder(source, target),
@@ -1201,31 +1187,31 @@
           var parentBoneMatrix = boneHash[parent].currentMatrix;
           var matrix = math$1.matrix.identity(); // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移
 
-          var t = [1, 0, 0, 1, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5];
+          var t = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5, 0, 1];
           matrix = math$1.matrix.multiply(matrix, t); // 可选旋转
 
           if (transform.skX) {
             var d = math$1.geom.d2r(transform.skX);
             var sin = Math.sin(d);
             var cos = Math.cos(d);
-            var _t = [cos, sin, -sin, cos, 0, 0];
+            var _t = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
             matrix = math$1.matrix.multiply(matrix, _t);
           } // 可选缩放
 
 
           if (transform.scX !== undefined || transform.scY !== undefined) {
-            var _t2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+            var _t2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
             matrix = math$1.matrix.multiply(matrix, _t2);
           } // tfo为图片中心，可合并
 
 
           t = math$1.matrix.identity();
-          t[4] = tex.frameWidth * 0.5;
-          t[5] = tex.frameHeight * 0.5;
+          t[12] = tex.frameWidth * 0.5;
+          t[13] = tex.frameHeight * 0.5;
           matrix = math$1.matrix.multiply(t, matrix);
           t = math$1.matrix.identity();
-          t[4] = -tex.frameWidth * 0.5;
-          t[5] = -tex.frameHeight * 0.5;
+          t[12] = -tex.frameWidth * 0.5;
+          t[13] = -tex.frameHeight * 0.5;
           matrix = math$1.matrix.multiply(matrix, t);
           matrix = math$1.matrix.multiply(parentBoneMatrix, matrix);
           displayTarget.matrix = matrix;
@@ -1258,7 +1244,7 @@
         children = bone.children,
         currentMatrix = bone.currentMatrix;
     var m = math$2.matrix.multiply(matrixEvent, currentMatrix);
-    ctx.setTransform.apply(ctx, _toConsumableArray(m));
+    ctx.setTransform(m[0], m[1], m[4], m[5], m[12], m[13]);
     ctx.beginPath();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
@@ -1313,7 +1299,7 @@
           matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
 
           ctx.save();
-          ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
+          ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.beginPath();
           ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
           ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
@@ -1327,14 +1313,14 @@
       else {
           var matrix = displayTarget.matrix;
 
-          if (matrix[0] === 0 || matrix[3] === 0) {
+          if (matrix[0] === 0 || matrix[5] === 0) {
             return;
           }
 
           matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
 
           ctx.save();
-          ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
+          ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.beginPath();
           ctx.moveTo(-tex.frameX, -tex.frameY);
           ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
@@ -1378,7 +1364,7 @@
           var matrix = item.matrix,
               scaleCoords = item.scaleCoords;
           matrix = math$2.matrix.multiply(matrixEvent, matrix);
-          ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
+          ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.strokeStyle = '#39F';
           ctx.lineWidth = 1;
           ctx.beginPath();
@@ -1392,7 +1378,7 @@
           var matrix = item.matrix,
               matrixF = item.matrixF;
           matrix = math$2.matrix.multiply(matrixEvent, matrixF || matrix);
-          ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
+          ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.fillStyle = '#0D6';
           ctx.beginPath();
           ctx.arc(0, 0, 4, 0, Math.PI * 2);
@@ -1404,7 +1390,7 @@
           var matrix = displayTarget.matrix;
           matrix = math$2.matrix.multiply(matrixEvent, matrix);
           ctx.save();
-          ctx.setTransform.apply(ctx, _toConsumableArray(matrix));
+          ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.strokeStyle = '#F90';
           ctx.lineWidth = 1;
           ctx.beginPath();
@@ -1433,7 +1419,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.5.7";
+  var version = "0.6.0";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1712,20 +1698,20 @@
             var left = computedStyle[MARGIN_LEFT] + computedStyle[BORDER_LEFT_WIDTH] + computedStyle[PADDING_LEFT] + computedStyle[WIDTH] * 0.5;
             var top = computedStyle[MARGIN_TOP] + computedStyle[BORDER_TOP_WIDTH] + computedStyle[PADDING_TOP] + computedStyle[HEIGHT] * 0.5;
             var t = karas.math.matrix.identity();
-            t[4] = left;
-            t[5] = top; // 画布居中
+            t[12] = left;
+            t[13] = top; // 画布居中
 
             if (self.canvas) {
               var dx = self.canvas.x || 0;
               var dy = self.canvas.y || 0;
-              t[4] -= dx * 0.5;
-              t[5] -= dy * 0.5; // 适配尺寸
+              t[12] -= dx * 0.5;
+              t[13] -= dy * 0.5; // 适配尺寸
 
               if (self.props.fitSize) {
                 var sx = computedStyle.width / self.canvas.width;
                 var sy = computedStyle.height / self.canvas.height;
                 t[0] = sx;
-                t[3] = sy;
+                t[5] = sy;
               }
             }
 

@@ -64,20 +64,20 @@ function animateBoneMatrix(animationList, offset, boneHash) {
         }
       }
     });
-    let matrix = [1, 0, 0, 1, 0, 0];
+    let matrix = math.matrix.identity();
     if(res.translateX || res.translateY) {
-      let m = [1, 0, 0, 1, res.translateX || 0, res.translateY || 0];
+      let m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, res.translateX || 0, res.translateY || 0, 0, 1];
       matrix = math.matrix.multiply(matrix, m);
     }
     if(res.rotateZ) {
       let d = math.geom.d2r(res.rotateZ);
       let sin = Math.sin(d);
       let cos = Math.cos(d);
-      let m = [cos, sin, -sin, cos, 0, 0];
+      let m = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
       matrix = math.matrix.multiply(matrix, m);
     }
     if(res.scaleX !== undefined || res.scaleY !== undefined) {
-      let m = [res.scaleX === undefined ? 1 : res.scaleX, 0, 0, res.scaleY === undefined ? 1 : res.scaleY, 0, 0];
+      let m = [res.scaleX === undefined ? 1 : res.scaleX, 0, 0, 0, 0, res.scaleY === undefined ? 1 : res.scaleY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
       matrix = math.matrix.multiply(matrix, m);
     }
     bone.matrixA = matrix;
@@ -203,12 +203,12 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         let { weightList } = item;
         // 有绑定骨骼的mesh，计算权重
         if(weightList) {
-          let m = [0, 0, 0, 0, 0, 0];
+          let m = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
           weightList.forEach(weight => {
             let { index, value, matrix } = weight;
             let boneMatrix = bone[index].currentMatrix;
             let offset = karas.math.matrix.multiply(boneMatrix, matrix);
-            for(let i = 0; i < 6; i++) {
+            for(let i = 0; i < 16; i++) {
               m[i] += offset[i] * value;
             }
           });
@@ -217,7 +217,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         // 没有绑定认为直属父骨骼
         else {
           let parentBoneMatrix = boneHash[parent].currentMatrix;
-          let offsetMatrix = [1, 0, 0, 1, item.x, item.y];
+          let offsetMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, item.x, item.y, 0, 1];
           let m = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
           item.matrix = m;
         }
@@ -245,7 +245,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
                 }
                 let index = i >> 1;
                 let target = verticesList[index];
-                let m = [1, 0, 0, 1, x, y];
+                let m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, 0, 1];
                 target.matrixF = math.matrix.multiply(target.matrix, m);
               }
             }
@@ -284,7 +284,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
                 }
                 let index = i >> 1;
                 let target = verticesList[index];
-                let m = [1, 0, 0, 1, x, y];
+                let m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, 0, 1];
                 target.matrixF = math.matrix.multiply(target.matrix, m);
               }
             }
@@ -299,7 +299,7 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
         indexList.forEach(i => {
           let vertices = verticesList[i];
           let coords = math.matrix.calPoint([0, 0], vertices.matrixF || vertices.matrix);
-          target = target.concat(coords);
+          target = target.concat(coords.slice(0, 2));
         });
         // 先交换确保3个点顺序
         let [source1, target1] = math.tar.exchangeOrder(source, target);
@@ -314,29 +314,29 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
       let parentBoneMatrix = boneHash[parent].currentMatrix;
       let matrix = math.matrix.identity();
       // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移
-      let t = [1, 0, 0, 1, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5];
+      let t = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5, 0, 1];
       matrix = math.matrix.multiply(matrix, t);
       // 可选旋转
       if(transform.skX) {
         let d = math.geom.d2r(transform.skX);
         let sin = Math.sin(d);
         let cos = Math.cos(d);
-        let t = [cos, sin, -sin, cos, 0, 0];
+        let t = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = math.matrix.multiply(matrix, t);
       }
       // 可选缩放
       if(transform.scX !== undefined || transform.scY !== undefined) {
-        let t = [transform.scX === undefined ? 1 : transform.scX, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0];
+        let t = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         matrix = math.matrix.multiply(matrix, t);
       }
       // tfo为图片中心，可合并
       t = math.matrix.identity();
-      t[4] = tex.frameWidth * 0.5;
-      t[5] = tex.frameHeight * 0.5;
+      t[12] = tex.frameWidth * 0.5;
+      t[13] = tex.frameHeight * 0.5;
       matrix = math.matrix.multiply(t, matrix);
       t = math.matrix.identity();
-      t[4] = -tex.frameWidth * 0.5;
-      t[5] = -tex.frameHeight * 0.5;
+      t[12] = -tex.frameWidth * 0.5;
+      t[13] = -tex.frameHeight * 0.5;
       matrix = math.matrix.multiply(matrix, t);
       matrix = math.matrix.multiply(parentBoneMatrix, matrix);
       displayTarget.matrix = matrix;
