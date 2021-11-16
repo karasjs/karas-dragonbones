@@ -2,24 +2,24 @@ import karas from 'karas';
 
 const { math } = karas;
 
-function canvasBone(ctx, matrixEvent, bone) {
+function canvasBone(ctx, matrixEvent, bone, dx, dy) {
   let { length, children, currentMatrix } = bone;
   let m = math.matrix.multiply(matrixEvent, currentMatrix);
   ctx.setTransform(m[0], m[1], m[4], m[5], m[12], m[13]);
   ctx.beginPath();
   ctx.strokeStyle = '#000';
   ctx.lineWidth = 1;
-  ctx.arc(0, 0, 5, 0, Math.PI * 2);
-  ctx.moveTo(0, 0);
-  ctx.lineTo(length || 5, 0);
+  ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+  ctx.moveTo(dx, dy);
+  ctx.lineTo((length || 5) + dx, dy);
   ctx.closePath();
   ctx.stroke();
   children.forEach(item => {
-    canvasBone(ctx, matrixEvent, item);
+    canvasBone(ctx, matrixEvent, item, dx, dy);
   });
 }
 
-function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
+function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
   slot.forEach(item => {
     let { name, displayIndex = 0, displayIndexA = displayIndex, blendMode, color = {}, colorA = color } = item;
     // 插槽隐藏不显示
@@ -50,12 +50,12 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.save();
         ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.beginPath();
-        ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
-        ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
-        ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+        ctx.moveTo(scaleCoords[0][0] + dx, scaleCoords[0][1] + dy);
+        ctx.lineTo(scaleCoords[1][0] + dx, scaleCoords[1][1] + dy);
+        ctx.lineTo(scaleCoords[2][0] + dx, scaleCoords[2][1] + dy);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
+        ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
         ctx.restore();
       });
     }
@@ -70,13 +70,13 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.save();
       ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
       ctx.beginPath();
-      ctx.moveTo(-tex.frameX, -tex.frameY);
-      ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
-      ctx.lineTo(-tex.frameX + tex.width,  -tex.frameY + tex.height);
-      ctx.lineTo(-tex.frameX,  -tex.frameY + tex.height);
+      ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx,  -tex.frameY + tex.height + dy);
+      ctx.lineTo(-tex.frameX + dx,  -tex.frameY + tex.height + dy);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
+      ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
       ctx.restore();
     }
     // 恢复模式
@@ -87,7 +87,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
   });
 }
 
-function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
+function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
   slot.forEach(item => {
     let { name, displayIndex = 0, displayIndexA = displayIndex } = item;
     // 插槽隐藏不显示
@@ -107,9 +107,9 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.strokeStyle = '#39F';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
-        ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
-        ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+        ctx.moveTo(scaleCoords[0][0] + dx, scaleCoords[0][1] + dy);
+        ctx.lineTo(scaleCoords[1][0] + dx, scaleCoords[1][1] + dy);
+        ctx.lineTo(scaleCoords[2][0] + dx, scaleCoords[2][1] + dy);
         ctx.closePath();
         ctx.stroke();
       });
@@ -119,7 +119,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
         ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.fillStyle = '#0D6';
         ctx.beginPath();
-        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.arc(dx, dy, 4, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
       });
@@ -133,18 +133,18 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
       ctx.strokeStyle = '#F90';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(tex.frameWidth, 0);
-      ctx.lineTo(tex.frameWidth, tex.frameHeight);
-      ctx.lineTo(0, tex.frameHeight);
+      ctx.moveTo(dx, dy);
+      ctx.lineTo(tex.frameWidth + dx, dy);
+      ctx.lineTo(tex.frameWidth + dx, tex.frameHeight + dy);
+      ctx.lineTo(dx, tex.frameHeight + dy);
       ctx.closePath();
       ctx.stroke();
       ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
       ctx.beginPath();
-      ctx.moveTo(-tex.frameX, -tex.frameY);
-      ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
-      ctx.lineTo(-tex.frameX + tex.width,  -tex.frameY + tex.height);
-      ctx.lineTo(-tex.frameX,  -tex.frameY + tex.height);
+      ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx,  -tex.frameY + tex.height + dy);
+      ctx.lineTo(-tex.frameX + dx,  -tex.frameY + tex.height + dy);
       ctx.closePath();
       ctx.stroke();
       ctx.restore();

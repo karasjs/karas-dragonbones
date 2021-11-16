@@ -1239,7 +1239,7 @@
 
   var math$2 = karas.math;
 
-  function canvasBone(ctx, matrixEvent, bone) {
+  function canvasBone(ctx, matrixEvent, bone, dx, dy) {
     var length = bone.length,
         children = bone.children,
         currentMatrix = bone.currentMatrix;
@@ -1248,17 +1248,17 @@
     ctx.beginPath();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
-    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(length || 5, 0);
+    ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+    ctx.moveTo(dx, dy);
+    ctx.lineTo((length || 5) + dx, dy);
     ctx.closePath();
     ctx.stroke();
     children.forEach(function (item) {
-      canvasBone(ctx, matrixEvent, item);
+      canvasBone(ctx, matrixEvent, item, dx, dy);
     });
   }
 
-  function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash) {
+  function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex = item.displayIndex,
@@ -1301,12 +1301,12 @@
           ctx.save();
           ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.beginPath();
-          ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
-          ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
-          ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+          ctx.moveTo(scaleCoords[0][0] + dx, scaleCoords[0][1] + dy);
+          ctx.lineTo(scaleCoords[1][0] + dx, scaleCoords[1][1] + dy);
+          ctx.lineTo(scaleCoords[2][0] + dx, scaleCoords[2][1] + dy);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
+          ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
           ctx.restore();
         });
       } // 默认图片类型
@@ -1322,13 +1322,13 @@
           ctx.save();
           ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.beginPath();
-          ctx.moveTo(-tex.frameX, -tex.frameY);
-          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
-          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY + tex.height);
-          ctx.lineTo(-tex.frameX, -tex.frameY + tex.height);
+          ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+          ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+          ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
+          ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
           ctx.closePath();
           ctx.clip();
-          ctx.drawImage(tex.source, -tex.x - tex.frameX, -tex.y - tex.frameY);
+          ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
           ctx.restore();
         } // 恢复模式
 
@@ -1341,7 +1341,7 @@
     });
   }
 
-  function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash) {
+  function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
     slot.forEach(function (item) {
       var name = item.name,
           _item$displayIndex2 = item.displayIndex,
@@ -1368,9 +1368,9 @@
           ctx.strokeStyle = '#39F';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(scaleCoords[0][0], scaleCoords[0][1]);
-          ctx.lineTo(scaleCoords[1][0], scaleCoords[1][1]);
-          ctx.lineTo(scaleCoords[2][0], scaleCoords[2][1]);
+          ctx.moveTo(scaleCoords[0][0] + dx, scaleCoords[0][1] + dy);
+          ctx.lineTo(scaleCoords[1][0] + dx, scaleCoords[1][1] + dy);
+          ctx.lineTo(scaleCoords[2][0] + dx, scaleCoords[2][1] + dy);
           ctx.closePath();
           ctx.stroke();
         });
@@ -1381,7 +1381,7 @@
           ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
           ctx.fillStyle = '#0D6';
           ctx.beginPath();
-          ctx.arc(0, 0, 4, 0, Math.PI * 2);
+          ctx.arc(dx, dy, 4, 0, Math.PI * 2);
           ctx.closePath();
           ctx.fill();
         });
@@ -1394,18 +1394,18 @@
           ctx.strokeStyle = '#F90';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(tex.frameWidth, 0);
-          ctx.lineTo(tex.frameWidth, tex.frameHeight);
-          ctx.lineTo(0, tex.frameHeight);
+          ctx.moveTo(dx, dy);
+          ctx.lineTo(tex.frameWidth + dx, dy);
+          ctx.lineTo(tex.frameWidth + dx, tex.frameHeight + dy);
+          ctx.lineTo(dx, tex.frameHeight + dy);
           ctx.closePath();
           ctx.stroke();
           ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
           ctx.beginPath();
-          ctx.moveTo(-tex.frameX, -tex.frameY);
-          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY);
-          ctx.lineTo(-tex.frameX + tex.width, -tex.frameY + tex.height);
-          ctx.lineTo(-tex.frameX, -tex.frameY + tex.height);
+          ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+          ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+          ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
+          ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
           ctx.closePath();
           ctx.stroke();
           ctx.restore();
@@ -1419,7 +1419,7 @@
     canvasBone: canvasBone
   };
 
-  var version = "0.6.0";
+  var version = "0.6.1";
 
   var uuid = 0;
   var SHARE_CACHE = {};
@@ -1636,7 +1636,10 @@
         var width = root.width;
         var height = root.height;
 
-        fake.render = function (renderMode, lv, ctx, defs) {
+        fake.render = function (renderMode, lv, ctx, cache) {
+          var dx = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+          var dy = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
+
           if (computedStyle[DISPLAY] === 'none' || computedStyle[VISIBILITY] === 'hidden' || computedStyle[OPACITY] === 0) {
             return;
           } // 开启了静态帧优化优先使用缓存
@@ -1653,10 +1656,10 @@
             var frame = Math.floor(a.currentTime * (self.fps || 60) / 1000); // ske文件uuid + 骨架名 + 动画名 + 帧数
 
             staticKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
-            var cache = self.staticCacheHash[staticKey];
+            var ca = self.staticCacheHash[staticKey];
 
-            if (cache) {
-              ctx.putImageData(cache, 0, 0);
+            if (ca) {
+              ctx.putImageData(ca, 0, 0);
               offScreen.draw(ctx);
               sourceCtx.drawImage(offScreen.canvas, 0, 0);
               ctx.clearRect(0, 0, width, height);
@@ -1702,10 +1705,12 @@
             t[13] = top; // 画布居中
 
             if (self.canvas) {
-              var dx = self.canvas.x || 0;
-              var dy = self.canvas.y || 0;
-              t[12] -= dx * 0.5;
-              t[13] -= dy * 0.5; // 适配尺寸
+              var _dx = self.canvas.x || 0;
+
+              var _dy = self.canvas.y || 0;
+
+              t[12] -= _dx * 0.5;
+              t[13] -= _dy * 0.5; // 适配尺寸
 
               if (self.props.fitSize) {
                 var sx = computedStyle.width / self.canvas.width;
@@ -1716,18 +1721,18 @@
             }
 
             matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
-            render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash); // debug模式
+            render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy); // debug模式
 
             if (self.props.debug) {
-              render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
-              render.canvasBone(ctx, matrixEvent, bone[0]);
+              render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy);
+              render.canvasBone(ctx, matrixEvent, bone[0], dx, dy);
             } else {
               if (self.props.debugBone) {
-                render.canvasBone(ctx, matrixEvent, bone[0]);
+                render.canvasBone(ctx, matrixEvent, bone[0], dx, dy);
               }
 
               if (self.props.debugSlot) {
-                render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+                render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy);
               }
             } // 静态帧优化将离屏内容绘入
 

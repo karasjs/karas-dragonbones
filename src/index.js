@@ -183,7 +183,7 @@ class Dragonbones extends karas.Component {
     let root = self.root;
     let width = root.width;
     let height = root.height;
-    fake.render = function(renderMode, lv, ctx, defs) {
+    fake.render = function(renderMode, lv, ctx, cache, dx = 0, dy = 0) {
       if(computedStyle[DISPLAY] === 'none'
         || computedStyle[VISIBILITY] === 'hidden'
         || computedStyle[OPACITY] === 0) {
@@ -200,9 +200,9 @@ class Dragonbones extends karas.Component {
         let frame = Math.floor(a.currentTime * (self.fps || 60) / 1000);
         // ske文件uuid + 骨架名 + 动画名 + 帧数
         staticKey = self.ske.uuid + '>' + self.armatureName + '>' + self.actionName + '>' + frame;
-        let cache = self.staticCacheHash[staticKey];
-        if(cache) {
-          ctx.putImageData(cache, 0, 0);
+        let ca = self.staticCacheHash[staticKey];
+        if(ca) {
+          ctx.putImageData(ca, 0, 0);
           offScreen.draw(ctx);
           sourceCtx.drawImage(offScreen.canvas, 0, 0);
           ctx.clearRect(0, 0, width, height);
@@ -254,18 +254,18 @@ class Dragonbones extends karas.Component {
           }
         }
         matrixEvent = karas.math.matrix.multiply(matrixEvent, t);
-        render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash);
+        render.canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy);
         // debug模式
         if(self.props.debug) {
-          render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
-          render.canvasBone(ctx, matrixEvent, bone[0]);
+          render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy);
+          render.canvasBone(ctx, matrixEvent, bone[0], dx, dy);
         }
         else {
           if(self.props.debugBone) {
-            render.canvasBone(ctx, matrixEvent, bone[0]);
+            render.canvasBone(ctx, matrixEvent, bone[0], dx, dy);
           }
           if(self.props.debugSlot) {
-            render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash);
+            render.canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy);
           }
         }
         // 静态帧优化将离屏内容绘入
