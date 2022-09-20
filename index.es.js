@@ -1,11 +1,5 @@
 import karas from 'karas';
 
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
 function _defineProperties(target, props) {
   for (var i = 0; i < props.length; i++) {
     var descriptor = props[i];
@@ -19,6 +13,9 @@ function _defineProperties(target, props) {
 function _createClass(Constructor, protoProps, staticProps) {
   if (protoProps) _defineProperties(Constructor.prototype, protoProps);
   if (staticProps) _defineProperties(Constructor, staticProps);
+  Object.defineProperty(Constructor, "prototype", {
+    writable: false
+  });
   return Constructor;
 }
 
@@ -49,71 +46,18 @@ function _inherits(subClass, superClass) {
       configurable: true
     }
   });
+  Object.defineProperty(subClass, "prototype", {
+    writable: false
+  });
   if (superClass) _setPrototypeOf(subClass, superClass);
 }
 
-function _getPrototypeOf(o) {
-  _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
 function _setPrototypeOf(o, p) {
-  _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) {
     o.__proto__ = p;
     return o;
   };
-
   return _setPrototypeOf(o, p);
-}
-
-function _isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (typeof call === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return _assertThisInitialized(self);
-}
-
-function _createSuper(Derived) {
-  var hasNativeReflectConstruct = _isNativeReflectConstruct();
-
-  return function _createSuperInternal() {
-    var Super = _getPrototypeOf(Derived),
-        result;
-
-    if (hasNativeReflectConstruct) {
-      var NewTarget = _getPrototypeOf(this).constructor;
-
-      result = Reflect.construct(Super, arguments, NewTarget);
-    } else {
-      result = Super.apply(this, arguments);
-    }
-
-    return _possibleConstructorReturn(this, result);
-  };
 }
 
 function _slicedToArray(arr, i) {
@@ -125,14 +69,17 @@ function _arrayWithHoles(arr) {
 }
 
 function _iterableToArrayLimit(arr, i) {
-  if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return;
+  var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
+
+  if (_i == null) return;
   var _arr = [];
   var _n = true;
   var _d = false;
-  var _e = undefined;
+
+  var _s, _e;
 
   try {
-    for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+    for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
       _arr.push(_s.value);
 
       if (i && _arr.length === i) break;
@@ -173,7 +120,7 @@ function _nonIterableRest() {
 }
 
 var inject = karas.inject,
-    math = karas.math;
+    math$2 = karas.math;
 
 function parseAndLoadTex(tex, cb) {
   var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -292,19 +239,19 @@ function parseBone(data) {
     item.children = [];
     item.index = i; // 静态变换样式，可能某个骨骼没动画
 
-    var matrix = math.matrix.identity();
+    var matrix = math$2.matrix.identity();
 
     if (transform.x || transform.y) {
       var m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, transform.x || 0, transform.y || 0, 0, 1];
-      matrix = math.matrix.multiply(matrix, m);
+      matrix = math$2.matrix.multiply(matrix, m);
     }
 
     if (transform.skX) {
-      var d = math.geom.d2r(transform.skX);
+      var d = math$2.geom.d2r(transform.skX);
       var sin = Math.sin(d);
       var cos = Math.cos(d);
       var _m = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-      matrix = math.matrix.multiply(matrix, _m);
+      matrix = math$2.matrix.multiply(matrix, _m);
     }
 
     if (transform.scX !== undefined || transform.scY !== undefined) {
@@ -367,7 +314,7 @@ function parseSkin(data, texHash, props) {
               var _index = bonePose[_i];
               var m = bonePose.slice(_i + 1, _i + 7);
               var matrix = [m[0], m[1], 0, 0, m[2], m[3], 0, 0, 0, 0, 1, 0, m[4], m[5], 0, 1];
-              var coords = math.matrix.calPoint([0, 0], matrix);
+              var coords = math$2.matrix.calPoint([0, 0], matrix);
               bonePoseHash[_index] = {
                 coords: coords,
                 pose: matrix
@@ -399,12 +346,12 @@ function parseSkin(data, texHash, props) {
                     coords = _bonePoseHash$index.coords,
                     pose = _bonePoseHash$index.pose; // 先求骨头的角度，逆向选择至水平后，平移x/y的差值
 
-                var _math$matrix$calPoint7 = math.matrix.calPoint([0, 0], pose),
+                var _math$matrix$calPoint7 = math$2.matrix.calPoint([0, 0], pose),
                     _math$matrix$calPoint8 = _slicedToArray(_math$matrix$calPoint7, 2),
                     x0 = _math$matrix$calPoint8[0],
                     y0 = _math$matrix$calPoint8[1];
 
-                var _math$matrix$calPoint9 = math.matrix.calPoint([1, 0], pose),
+                var _math$matrix$calPoint9 = math$2.matrix.calPoint([1, 0], pose),
                     _math$matrix$calPoint10 = _slicedToArray(_math$matrix$calPoint9, 2),
                     x1 = _math$matrix$calPoint10[0],
                     y1 = _math$matrix$calPoint10[1];
@@ -425,7 +372,7 @@ function parseSkin(data, texHash, props) {
 
                 var rotate = [Math.cos(theta), Math.sin(theta), 0, 0, -Math.sin(theta), Math.cos(theta), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
                 var translate = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x - coords[0], y - coords[1], 0, 1];
-                var matrix = math.matrix.multiply(rotate, translate);
+                var matrix = math$2.matrix.multiply(rotate, translate);
                 res.weightList.push({
                   index: index,
                   value: value,
@@ -445,10 +392,10 @@ function parseSkin(data, texHash, props) {
               height = tex.height;
           var triangleList = item.triangleList = [];
 
-          for (var _i3 = 0, _len3 = triangles.length; _i3 < _len3; _i3 += 3) {
-            var i1 = triangles[_i3];
-            var i2 = triangles[_i3 + 1];
-            var i3 = triangles[_i3 + 2]; // uv坐标
+          for (var i = 0, len = triangles.length; i < len; i += 3) {
+            var i1 = triangles[i];
+            var i2 = triangles[i + 1];
+            var i3 = triangles[i + 2]; // uv坐标
 
             var p1x = uvs[i1 * 2];
             var p1y = uvs[i1 * 2 + 1];
@@ -464,7 +411,7 @@ function parseSkin(data, texHash, props) {
             var x3 = p3x * width;
             var y3 = p3y * height; // 从内心往外扩展约0.25px，可参数指定
 
-            var _math$geom$triangleIn = math.geom.triangleIncentre(x1, y1, x2, y2, x3, y3),
+            var _math$geom$triangleIn = math$2.geom.triangleIncentre(x1, y1, x2, y2, x3, y3),
                 _math$geom$triangleIn2 = _slicedToArray(_math$geom$triangleIn, 2),
                 x0 = _math$geom$triangleIn2[0],
                 y0 = _math$geom$triangleIn2[1];
@@ -488,30 +435,29 @@ function parseSkin(data, texHash, props) {
 
             var scale = px ? triangleScale(x0, y0, x1, y1, x2, y2, x3, y3, px) : 1; // 以内心为transformOrigin
 
-            var _m3 = math.matrix.identity();
+            var m = math$2.matrix.identity();
+            m[12] = -x0;
+            m[13] = -y0; // 缩放
 
-            _m3[12] = -x0;
-            _m3[13] = -y0; // 缩放
-
-            var t = math.matrix.identity();
+            var t = math$2.matrix.identity();
             t[0] = t[5] = scale;
-            _m3 = math.matrix.multiply(t, _m3); // 移动回去
+            m = math$2.matrix.multiply(t, m); // 移动回去
 
             t[12] = x0;
             t[13] = y0;
-            _m3 = math.matrix.multiply(t, _m3); // 获取扩展后的三角形顶点坐标
+            m = math$2.matrix.multiply(t, m); // 获取扩展后的三角形顶点坐标
 
-            var _math$matrix$calPoint = math.matrix.calPoint([x1, y1], _m3),
+            var _math$matrix$calPoint = math$2.matrix.calPoint([x1, y1], m),
                 _math$matrix$calPoint2 = _slicedToArray(_math$matrix$calPoint, 2),
                 sx1 = _math$matrix$calPoint2[0],
                 sy1 = _math$matrix$calPoint2[1];
 
-            var _math$matrix$calPoint3 = math.matrix.calPoint([x2, y2], _m3),
+            var _math$matrix$calPoint3 = math$2.matrix.calPoint([x2, y2], m),
                 _math$matrix$calPoint4 = _slicedToArray(_math$matrix$calPoint3, 2),
                 sx2 = _math$matrix$calPoint4[0],
                 sy2 = _math$matrix$calPoint4[1];
 
-            var _math$matrix$calPoint5 = math.matrix.calPoint([x3, y3], _m3),
+            var _math$matrix$calPoint5 = math$2.matrix.calPoint([x3, y3], m),
                 _math$matrix$calPoint6 = _slicedToArray(_math$matrix$calPoint5, 2),
                 sx3 = _math$matrix$calPoint6[0],
                 sy3 = _math$matrix$calPoint6[1]; // 三角形所在矩形距离左上角原点的坐标，以此做img切割最小尺寸化，以及变换原点计算
@@ -519,7 +465,7 @@ function parseSkin(data, texHash, props) {
 
 
             triangleList.push({
-              index: Math.round(_i3 / 3),
+              index: Math.round(i / 3),
               indexList: [i1, i2, i3],
               // ox,
               // oy,
@@ -781,8 +727,8 @@ function parseAnimation(data, frameRate, boneHash) {
             if (verticesLast && vertices) {
               last.dv = [];
 
-              for (var _i4 = 0, len = Math.max(verticesLast.length, vertices.length); _i4 < len; _i4++) {
-                last.dv.push((vertices[_i4] || 0) - (verticesLast[_i4] || 0));
+              for (var _i3 = 0, len = Math.max(verticesLast.length, vertices.length); _i3 < len; _i3++) {
+                last.dv.push((vertices[_i3] || 0) - (verticesLast[_i3] || 0));
               }
             } else if (verticesLast) {
               last.dv = last.vertices.map(function (n) {
@@ -1058,13 +1004,13 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
           item.matrix = m;
         } // 没有绑定认为直属父骨骼
         else {
-            var parentBoneMatrix = boneHash[parent].currentMatrix;
-            var offsetMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, item.x, item.y, 0, 1];
+          var parentBoneMatrix = boneHash[parent].currentMatrix;
+          var offsetMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, item.x, item.y, 0, 1];
 
-            var _m3 = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
+          var _m3 = karas.math.matrix.multiply(parentBoneMatrix, offsetMatrix);
 
-            item.matrix = _m3;
-          } // 每次先清空ffd自由变换的数据
+          item.matrix = _m3;
+        } // 每次先清空ffd自由变换的数据
 
 
         item.matrixF = null;
@@ -1175,41 +1121,41 @@ function calSlot(offset, slot, skinHash, bone, boneHash, texHash, ffdAnimationHa
       });
     } // 默认图片类型
     else {
-        var _displayTarget$transf = displayTarget.transform,
-            transform = _displayTarget$transf === void 0 ? {} : _displayTarget$transf;
-        var tex = texHash[displayTarget.path || displayTarget.name];
-        var parentBoneMatrix = boneHash[parent].currentMatrix;
-        var matrix = math$1.matrix.identity(); // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移
+      var _displayTarget$transf = displayTarget.transform,
+          transform = _displayTarget$transf === void 0 ? {} : _displayTarget$transf;
+      var tex = texHash[displayTarget.path || displayTarget.name];
+      var parentBoneMatrix = boneHash[parent].currentMatrix;
+      var matrix = math$1.matrix.identity(); // 图片本身形变，因中心点在图片本身中心，所以无论是否有translate都要平移
 
-        var t = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5, 0, 1];
-        matrix = math$1.matrix.multiply(matrix, t); // 可选旋转
+      var t = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, (transform.x || 0) - tex.frameWidth * 0.5, (transform.y || 0) - tex.frameHeight * 0.5, 0, 1];
+      matrix = math$1.matrix.multiply(matrix, t); // 可选旋转
 
-        if (transform.skX) {
-          var d = math$1.geom.d2r(transform.skX);
-          var sin = Math.sin(d);
-          var cos = Math.cos(d);
-          var _t = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-          matrix = math$1.matrix.multiply(matrix, _t);
-        } // 可选缩放
-
-
-        if (transform.scX !== undefined || transform.scY !== undefined) {
-          var _t2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-          matrix = math$1.matrix.multiply(matrix, _t2);
-        } // tfo为图片中心，可合并
+      if (transform.skX) {
+        var d = math$1.geom.d2r(transform.skX);
+        var sin = Math.sin(d);
+        var cos = Math.cos(d);
+        var _t = [cos, sin, 0, 0, -sin, cos, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+        matrix = math$1.matrix.multiply(matrix, _t);
+      } // 可选缩放
 
 
-        t = math$1.matrix.identity();
-        t[12] = tex.frameWidth * 0.5;
-        t[13] = tex.frameHeight * 0.5;
-        matrix = math$1.matrix.multiply(t, matrix);
-        t = math$1.matrix.identity();
-        t[12] = -tex.frameWidth * 0.5;
-        t[13] = -tex.frameHeight * 0.5;
-        matrix = math$1.matrix.multiply(matrix, t);
-        matrix = math$1.matrix.multiply(parentBoneMatrix, matrix);
-        displayTarget.matrix = matrix;
-      }
+      if (transform.scX !== undefined || transform.scY !== undefined) {
+        var _t2 = [transform.scX === undefined ? 1 : transform.scX, 0, 0, 0, 0, transform.scY === undefined ? 1 : transform.scY, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+        matrix = math$1.matrix.multiply(matrix, _t2);
+      } // tfo为图片中心，可合并
+
+
+      t = math$1.matrix.identity();
+      t[12] = tex.frameWidth * 0.5;
+      t[13] = tex.frameHeight * 0.5;
+      matrix = math$1.matrix.multiply(t, matrix);
+      t = math$1.matrix.identity();
+      t[12] = -tex.frameWidth * 0.5;
+      t[13] = -tex.frameHeight * 0.5;
+      matrix = math$1.matrix.multiply(matrix, t);
+      matrix = math$1.matrix.multiply(parentBoneMatrix, matrix);
+      displayTarget.matrix = matrix;
+    }
   });
 }
 
@@ -1231,13 +1177,13 @@ var util = {
   clearAnimation: clearAnimation
 };
 
-var math$2 = karas.math;
+var math = karas.math;
 
 function canvasBone(ctx, matrixEvent, bone, dx, dy) {
   var length = bone.length,
       children = bone.children,
       currentMatrix = bone.currentMatrix;
-  var m = math$2.matrix.multiply(matrixEvent, currentMatrix);
+  var m = math.matrix.multiply(matrixEvent, currentMatrix);
   ctx.setTransform(m[0], m[1], m[4], m[5], m[12], m[13]);
   ctx.beginPath();
   ctx.strokeStyle = '#000';
@@ -1290,7 +1236,7 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
       triangleList.forEach(function (item) {
         var matrix = item.matrix,
             scaleCoords = item.scaleCoords;
-        matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
+        matrix = math.matrix.multiply(matrixEvent, matrix); // clip绘制
 
         ctx.save();
         ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
@@ -1305,26 +1251,26 @@ function canvasSlot(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
       });
     } // 默认图片类型
     else {
-        var matrix = displayTarget.matrix;
+      var matrix = displayTarget.matrix;
 
-        if (matrix[0] === 0 || matrix[5] === 0) {
-          return;
-        }
+      if (matrix[0] === 0 || matrix[5] === 0) {
+        return;
+      }
 
-        matrix = math$2.matrix.multiply(matrixEvent, matrix); // clip绘制
+      matrix = math.matrix.multiply(matrixEvent, matrix); // clip绘制
 
-        ctx.save();
-        ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
-        ctx.beginPath();
-        ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
-        ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
-        ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
-        ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
-        ctx.restore();
-      } // 恢复模式
+      ctx.save();
+      ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
+      ctx.beginPath();
+      ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
+      ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(tex.source, -tex.x - tex.frameX + dx, -tex.y - tex.frameY + dy);
+      ctx.restore();
+    } // 恢复模式
 
 
     if (blendMode) {
@@ -1357,7 +1303,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
       triangleList.forEach(function (item) {
         var matrix = item.matrix,
             scaleCoords = item.scaleCoords;
-        matrix = math$2.matrix.multiply(matrixEvent, matrix);
+        matrix = math.matrix.multiply(matrixEvent, matrix);
         ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.strokeStyle = '#39F';
         ctx.lineWidth = 1;
@@ -1371,7 +1317,7 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
       verticesList.forEach(function (item) {
         var matrix = item.matrix,
             matrixF = item.matrixF;
-        matrix = math$2.matrix.multiply(matrixEvent, matrixF || matrix);
+        matrix = math.matrix.multiply(matrixEvent, matrixF || matrix);
         ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
         ctx.fillStyle = '#0D6';
         ctx.beginPath();
@@ -1381,29 +1327,29 @@ function canvasTriangle(ctx, matrixEvent, slot, skinHash, texHash, dx, dy) {
       });
     } // 默认图片类型
     else {
-        var matrix = displayTarget.matrix;
-        matrix = math$2.matrix.multiply(matrixEvent, matrix);
-        ctx.save();
-        ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
-        ctx.strokeStyle = '#F90';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(dx, dy);
-        ctx.lineTo(tex.frameWidth + dx, dy);
-        ctx.lineTo(tex.frameWidth + dx, tex.frameHeight + dy);
-        ctx.lineTo(dx, tex.frameHeight + dy);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
-        ctx.beginPath();
-        ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
-        ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
-        ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
-        ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.restore();
-      }
+      var matrix = displayTarget.matrix;
+      matrix = math.matrix.multiply(matrixEvent, matrix);
+      ctx.save();
+      ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12], matrix[13]);
+      ctx.strokeStyle = '#F90';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(dx, dy);
+      ctx.lineTo(tex.frameWidth + dx, dy);
+      ctx.lineTo(tex.frameWidth + dx, tex.frameHeight + dy);
+      ctx.lineTo(dx, tex.frameHeight + dy);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(172, 0, 172, 0.5)';
+      ctx.beginPath();
+      ctx.moveTo(-tex.frameX + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + dy);
+      ctx.lineTo(-tex.frameX + tex.width + dx, -tex.frameY + tex.height + dy);
+      ctx.lineTo(-tex.frameX + dx, -tex.frameY + tex.height + dy);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 }
 
@@ -1413,7 +1359,7 @@ var render = {
   canvasBone: canvasBone
 };
 
-var version = "0.6.1";
+var version = "0.7.0";
 
 var uuid = 0;
 var SHARE_CACHE = {};
@@ -1433,12 +1379,8 @@ var _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
 var Dragonbones = /*#__PURE__*/function (_karas$Component) {
   _inherits(Dragonbones, _karas$Component);
 
-  var _super = _createSuper(Dragonbones);
-
   function Dragonbones() {
-    _classCallCheck(this, Dragonbones);
-
-    return _super.apply(this, arguments);
+    return _karas$Component.apply(this, arguments) || this;
   }
 
   _createClass(Dragonbones, [{
@@ -1572,8 +1514,8 @@ var Dragonbones = /*#__PURE__*/function (_karas$Component) {
         defaultAction = _defineProperty({}, key, options.action);
       } // 不存在或没有指定使用ske文件的第一个
       else if (defaultActions && defaultActions.length) {
-          defaultAction = defaultActions[0];
-        }
+        defaultAction = defaultActions[0];
+      }
 
       if (defaultAction) {
         var a = this.action(defaultAction.gotoAndPlay || defaultAction.gotoAndStop);
@@ -1630,9 +1572,9 @@ var Dragonbones = /*#__PURE__*/function (_karas$Component) {
       var width = root.width;
       var height = root.height;
 
-      fake.render = function (renderMode, lv, ctx, cache) {
-        var dx = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-        var dy = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
+      fake.render = function (renderMode, ctx) {
+        var dx = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+        var dy = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
 
         if (computedStyle[DISPLAY] === 'none' || computedStyle[VISIBILITY] === 'hidden' || computedStyle[OPACITY] === 0) {
           return;
@@ -1781,5 +1723,5 @@ var Dragonbones = /*#__PURE__*/function (_karas$Component) {
 
 Dragonbones.version = version;
 
-export default Dragonbones;
+export { Dragonbones as default };
 //# sourceMappingURL=index.es.js.map

@@ -183,7 +183,7 @@ class Dragonbones extends karas.Component {
     let root = self.root;
     let width = root.width;
     let height = root.height;
-    fake.render = function(renderMode, lv, ctx, cache, dx = 0, dy = 0) {
+    fake.render = function(renderMode, ctx, dx = 0, dy = 0) {
       if(computedStyle[DISPLAY] === 'none'
         || computedStyle[VISIBILITY] === 'hidden'
         || computedStyle[OPACITY] === 0) {
